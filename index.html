@@ -1,0 +1,2382 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PIXEL CASINO 777</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --panel: #12121a;
+    --border: #2a2a3a;
+    --gold: #f5c518;
+    --red: #e03030;
+    --green: #2ecc40;
+    --blue: #4499ff;
+    --cyan: #00fff0;
+    --pink: #ff44aa;
+    --text: #e8e8f0;
+    --dim: #6a6a8a;
+    --pixel: 'Press Start 2P', monospace;
+    --vt: 'VT323', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; image-rendering: pixelated; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--pixel);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* CRT flicker */
+  @keyframes flicker { 0%,100%{opacity:1} 92%{opacity:1} 93%{opacity:0.97} 94%{opacity:1} }
+  body { animation: flicker 8s infinite; }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    padding: 24px 16px 16px;
+    border-bottom: 3px solid var(--gold);
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★';
+    display: block;
+    color: var(--gold);
+    font-size: 10px;
+    letter-spacing: 4px;
+    margin-bottom: 12px;
+    opacity: 0.6;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .casino-title {
+    font-size: clamp(18px, 4vw, 32px);
+    color: var(--gold);
+    text-shadow: 0 0 10px var(--gold), 0 0 30px #f5c51888, 3px 3px 0 #7a6200;
+    letter-spacing: 4px;
+  }
+  @keyframes blink { 50%{ opacity:0; } }
+  .blink { animation: blink 1s step-end infinite; }
+
+  /* COINS DISPLAY */
+  .hud {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 32px;
+    padding: 12px 16px;
+    background: var(--panel);
+    border-bottom: 2px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .hud-item { text-align: center; }
+  .hud-label { font-size: 7px; color: var(--dim); margin-bottom: 4px; }
+  .hud-value { font-size: 14px; color: var(--gold); text-shadow: 0 0 8px var(--gold); }
+  .hud-value.red { color: var(--red); text-shadow: 0 0 8px var(--red); }
+  .hud-value.green { color: var(--green); text-shadow: 0 0 8px var(--green); }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    border-bottom: 3px solid var(--border);
+    background: var(--panel);
+    overflow-x: auto;
+  }
+  .tab {
+    flex: 1;
+    min-width: 80px;
+    padding: 12px 8px;
+    font-family: var(--pixel);
+    font-size: 7px;
+    color: var(--dim);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    border-right: 2px solid var(--border);
+    transition: all 0.1s;
+    letter-spacing: 1px;
+  }
+  .tab:hover { color: var(--text); background: #1a1a28; }
+  .tab.active { color: var(--gold); background: #1c1c2a; border-top: 2px solid var(--gold); }
+  .tab-icon { font-size: 16px; display: block; margin-bottom: 4px; }
+
+  /* MAIN */
+  main { max-width: 700px; margin: 0 auto; padding: 24px 16px; }
+  .game-section { display: none; }
+  .game-section.active { display: block; }
+
+  /* PIXEL PANEL */
+  .px-panel {
+    background: var(--panel);
+    border: 3px solid var(--border);
+    box-shadow: 4px 4px 0 #000, inset 0 0 30px rgba(0,0,0,0.5);
+    padding: 24px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+  .px-panel::before {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border: 1px solid rgba(255,255,255,0.04);
+    pointer-events: none;
+  }
+  .section-title {
+    font-size: 10px;
+    color: var(--cyan);
+    text-shadow: 0 0 8px var(--cyan);
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+    text-align: center;
+  }
+
+  /* BET CONTROL */
+  .bet-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .bet-label { font-size: 8px; color: var(--dim); }
+  .bet-display {
+    font-size: 16px;
+    color: var(--gold);
+    min-width: 80px;
+    text-align: center;
+    text-shadow: 0 0 8px var(--gold);
+  }
+  .px-btn {
+    font-family: var(--pixel);
+    font-size: 8px;
+    padding: 8px 14px;
+    border: 3px solid;
+    cursor: pointer;
+    transition: transform 0.05s, box-shadow 0.05s;
+    letter-spacing: 1px;
+    background: var(--panel);
+    box-shadow: 3px 3px 0 #000;
+    text-transform: uppercase;
+  }
+  .px-btn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 #000; }
+  .px-btn.gold { border-color: var(--gold); color: var(--gold); }
+  .px-btn.gold:hover { background: var(--gold); color: #000; }
+  .px-btn.red { border-color: var(--red); color: var(--red); }
+  .px-btn.red:hover { background: var(--red); color: #fff; }
+  .px-btn.green { border-color: var(--green); color: var(--green); }
+  .px-btn.green:hover { background: var(--green); color: #000; }
+  .px-btn.blue { border-color: var(--blue); color: var(--blue); }
+  .px-btn.blue:hover { background: var(--blue); color: #fff; }
+  .px-btn.cyan { border-color: var(--cyan); color: var(--cyan); }
+  .px-btn.cyan:hover { background: var(--cyan); color: #000; }
+  .px-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .px-btn:disabled:active { transform: none; box-shadow: 3px 3px 0 #000; }
+
+  /* RESULT MSG */
+  .result-msg {
+    text-align: center;
+    font-size: 9px;
+    min-height: 28px;
+    padding: 8px;
+    letter-spacing: 1px;
+    font-family: var(--vt);
+    font-size: 18px;
+  }
+  .result-msg.win { color: var(--green); text-shadow: 0 0 12px var(--green); }
+  .result-msg.lose { color: var(--red); text-shadow: 0 0 12px var(--red); }
+  .result-msg.push { color: var(--gold); text-shadow: 0 0 12px var(--gold); }
+
+  /* ===== SLOT MACHINE ===== */
+  .reels-wrap {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 20px 0;
+  }
+  .reel-window {
+    width: 72px;
+    height: 72px;
+    border: 3px solid var(--gold);
+    background: #06060c;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 12px var(--gold)44, inset 0 0 10px rgba(0,0,0,0.8);
+  }
+  .reel-inner {
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.05s;
+  }
+  .reel-symbol {
+    width: 72px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    flex-shrink: 0;
+  }
+  .reel-window::before, .reel-window::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    height: 20px;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .reel-window::before { top: 0; background: linear-gradient(to bottom, #06060c, transparent); }
+  .reel-window::after { bottom: 0; background: linear-gradient(to top, #06060c, transparent); }
+
+  @keyframes spin-reel {
+    0%   { transform: translateY(0); }
+    100% { transform: translateY(-720px); }
+  }
+  .spinning .reel-inner { animation: spin-reel 0.15s linear infinite; }
+
+  .payline {
+    text-align: center;
+    font-size: 8px;
+    color: var(--dim);
+    margin-bottom: 8px;
+  }
+
+  /* ===== BLACKJACK ===== */
+  .card-area {
+    min-height: 80px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 8px;
+  }
+  .area-label {
+    font-size: 7px;
+    color: var(--dim);
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+  .card {
+    width: 44px;
+    height: 62px;
+    background: #f0f0f8;
+    border: 2px solid #222;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--vt);
+    font-size: 22px;
+    font-weight: bold;
+    color: #111;
+    box-shadow: 2px 2px 0 #000;
+    position: relative;
+    transition: transform 0.15s;
+    flex-shrink: 0;
+  }
+  .card.red-card { color: #cc0000; }
+  .card.hidden {
+    background: repeating-linear-gradient(45deg, #1a3a7a, #1a3a7a 4px, #0a2050 4px, #0a2050 8px);
+    color: transparent;
+  }
+  .card-rank { font-size: 18px; line-height: 1; }
+  .card-suit { font-size: 16px; line-height: 1; }
+  .card-total {
+    font-size: 9px;
+    color: var(--cyan);
+    margin-top: 4px;
+  }
+  .bj-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+
+  /* ===== ROULETTE ===== */
+  .roulette-board {
+    display: grid;
+    grid-template-columns: repeat(13, 1fr);
+    gap: 2px;
+    margin-bottom: 16px;
+  }
+  .r-cell {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--vt);
+    font-size: 13px;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: transform 0.05s, opacity 0.1s;
+    user-select: none;
+  }
+  .r-cell:hover { transform: scale(1.1); z-index: 2; }
+  .r-cell.r-red { background: #8b0000; }
+  .r-cell.r-black { background: #111; }
+  .r-cell.r-green { background: #006400; }
+  .r-cell.selected { outline: 3px solid var(--gold); outline-offset: 1px; }
+  .r-cell.hit { animation: cell-flash 0.6s ease; }
+  @keyframes cell-flash { 0%,100%{background:inherit} 50%{background: var(--gold); color:#000;} }
+
+  .roulette-outside {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+  .r-outside-btn {
+    font-family: var(--pixel);
+    font-size: 6px;
+    padding: 6px 10px;
+    border: 2px solid var(--border);
+    background: var(--panel);
+    color: var(--dim);
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.1s;
+  }
+  .r-outside-btn:hover, .r-outside-btn.selected { border-color: var(--gold); color: var(--gold); background: #1c1c2a; }
+
+  .wheel-display {
+    text-align: center;
+    font-size: 36px;
+    margin: 8px 0;
+    min-height: 50px;
+  }
+  @keyframes wheel-spin { 0%{transform:rotate(0)} 100%{transform:rotate(1440deg)} }
+  .spinning-wheel { animation: wheel-spin 1.5s cubic-bezier(0.2,0.8,0.4,1) forwards; display:inline-block; }
+
+  /* ===== DICE ===== */
+  .dice-area {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin: 20px 0;
+  }
+  .die {
+    width: 70px;
+    height: 70px;
+    background: #f0f0f8;
+    border: 3px solid #222;
+    border-radius: 10px;
+    display: grid;
+    grid-template-areas:
+      "a . b"
+      "c e d"
+      "f . g";
+    grid-template-columns: 1fr 1fr 1fr;
+    padding: 8px;
+    gap: 2px;
+    box-shadow: 4px 4px 0 #000;
+    transition: transform 0.1s;
+  }
+  .die.rolling { animation: dice-roll 0.6s ease; }
+  @keyframes dice-roll {
+    0%{transform:rotate(0) scale(1)}
+    25%{transform:rotate(180deg) scale(1.1)}
+    50%{transform:rotate(360deg) scale(0.9)}
+    75%{transform:rotate(540deg) scale(1.1)}
+    100%{transform:rotate(720deg) scale(1)}
+  }
+  .dot {
+    width: 10px;
+    height: 10px;
+    background: #111;
+    border-radius: 50%;
+    justify-self: center;
+    align-self: center;
+    display: none;
+  }
+  .dot.show { display: block; }
+  .dot.red-dot { background: var(--red); }
+
+  .dice-bets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+  .dice-total-display {
+    text-align: center;
+    font-size: 28px;
+    font-family: var(--vt);
+    color: var(--cyan);
+    min-height: 40px;
+    text-shadow: 0 0 8px var(--cyan);
+  }
+
+  /* HISTORY */
+  .history-list {
+    font-family: var(--vt);
+    font-size: 15px;
+    color: var(--dim);
+    max-height: 120px;
+    overflow-y: auto;
+    padding: 8px;
+    border: 1px solid var(--border);
+    background: #08080e;
+  }
+  .history-list div { padding: 2px 0; }
+  .history-list .h-win { color: var(--green); }
+  .history-list .h-lose { color: var(--red); }
+
+  /* COIN ANIMATION */
+  @keyframes coin-pop {
+    0%{ transform: translateY(0) scale(1); opacity:1; }
+    100%{ transform: translateY(-60px) scale(0); opacity:0; }
+  }
+  .coin-pop {
+    position: fixed;
+    font-size: 20px;
+    pointer-events: none;
+    animation: coin-pop 0.8s ease-out forwards;
+    z-index: 1000;
+  }
+
+  /* MISSIONS */
+  .mission-card {
+    border: 2px solid var(--border);
+    background: #0e0e18;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  .mission-card.completed { border-color: var(--green); opacity: 0.5; }
+  .mission-card.ready { border-color: var(--gold); animation: neon-pulse 1.5s ease-in-out infinite; }
+  .mission-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .mission-name { font-size: 8px; color: var(--text); letter-spacing: 1px; }
+  .mission-reward { font-size: 8px; color: var(--gold); text-shadow: 0 0 6px var(--gold); white-space: nowrap; margin-left:8px; }
+  .mission-desc { font-family: var(--vt); font-size: 15px; color: var(--dim); margin-bottom: 10px; }
+  .mission-progress-bar {
+    height: 8px;
+    background: #1a1a28;
+    border: 1px solid var(--border);
+    margin-bottom: 6px;
+    position: relative;
+  }
+  .mission-progress-fill {
+    height: 100%;
+    background: var(--cyan);
+    box-shadow: 0 0 6px var(--cyan);
+    transition: width 0.4s ease;
+  }
+  .mission-progress-fill.gold { background: var(--gold); box-shadow: 0 0 6px var(--gold); }
+  .mission-progress-text { font-family: var(--vt); font-size: 13px; color: var(--dim); }
+  .mission-claim-btn {
+    font-family: var(--pixel);
+    font-size: 7px;
+    padding: 6px 14px;
+    border: 2px solid var(--gold);
+    color: var(--gold);
+    background: var(--panel);
+    cursor: pointer;
+    letter-spacing: 1px;
+    box-shadow: 2px 2px 0 #000;
+    margin-top: 6px;
+    animation: blink 0.8s step-end infinite;
+  }
+  .mission-claim-btn:hover { background: var(--gold); color: #000; }
+  .mission-badge {
+    font-size: 20px;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  @keyframes mission-complete {
+    0%{ transform: scale(1); }
+    50%{ transform: scale(1.03); box-shadow: 0 0 20px var(--gold); }
+    100%{ transform: scale(1); }
+  }
+  .mission-card.flash { animation: mission-complete 0.5s ease; }
+
+  /* NOTIFY BADGE */
+  .notify-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    background: var(--red);
+    border-radius: 50%;
+    margin-left: 4px;
+    vertical-align: middle;
+    box-shadow: 0 0 6px var(--red);
+    animation: blink 0.6s step-end infinite;
+  }
+
+  /* divider already defined */
+  @media(max-width:500px) {
+    .reel-window { width: 60px; height: 60px; }
+    .reel-symbol { width: 60px; height: 60px; font-size: 28px; }
+    .die { width: 56px; height: 56px; }
+  }
+
+  /* NEON BORDER ANIM */
+  @keyframes neon-pulse {
+    0%,100%{ box-shadow: 4px 4px 0 #000, 0 0 8px var(--gold)44; }
+    50%{ box-shadow: 4px 4px 0 #000, 0 0 20px var(--gold)88; }
+  }
+  .px-panel { animation: neon-pulse 3s ease-in-out infinite; }
+
+  .divider {
+    border: none;
+    border-top: 2px solid var(--border);
+    margin: 16px 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="casino-title">🎰 PIXEL CASINO 777 🎰</div>
+  <div style="font-size:7px; color:var(--dim); margin-top:8px; letter-spacing:3px;">
+    INSERT COIN TO CONTINUE <span class="blink">▮</span>
+  </div>
+</header>
+
+<div class="hud">
+  <div class="hud-item">
+    <div class="hud-label">💰 COINS</div>
+    <div class="hud-value" id="coins-display">1000</div>
+  </div>
+  <div class="hud-item">
+    <div class="hud-label">📈 WIN</div>
+    <div class="hud-value green" id="total-win">0</div>
+  </div>
+  <div class="hud-item">
+    <div class="hud-label">📉 LOSE</div>
+    <div class="hud-value red" id="total-lose">0</div>
+  </div>
+  <div class="hud-item">
+    <div class="hud-label">🎮 GAMES</div>
+    <div class="hud-value" id="total-games">0</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('slots')"><span class="tab-icon">🎰</span>SLOTS</button>
+  <button class="tab" onclick="switchTab('blackjack')"><span class="tab-icon">🃏</span>BLACK<br>JACK</button>
+  <button class="tab" onclick="switchTab('roulette')"><span class="tab-icon">🎡</span>ROUL<br>ETTE</button>
+  <button class="tab" onclick="switchTab('dice')"><span class="tab-icon">🎲</span>DICE</button>
+  <button class="tab" onclick="switchTab('flappy')"><span class="tab-icon">🐦</span>FLAP<br>PY</button>
+  <button class="tab" onclick="switchTab('missions')" id="mission-tab"><span class="tab-icon">🏆</span>MISS<br>IONS</button>
+</div>
+
+<main>
+
+<!-- ===== SLOTS ===== -->
+<div id="sec-slots" class="game-section active">
+  <div class="px-panel">
+    <div class="section-title">[ SLOT MACHINE ]</div>
+
+    <div class="payline">▶ MATCH 3 TO WIN ◀</div>
+    <div class="reels-wrap">
+      <div class="reel-window" id="reel0"><div class="reel-inner" id="ri0"></div></div>
+      <div class="reel-window" id="reel1"><div class="reel-inner" id="ri1"></div></div>
+      <div class="reel-window" id="reel2"><div class="reel-inner" id="ri2"></div></div>
+    </div>
+
+    <div class="bet-row">
+      <span class="bet-label">BET:</span>
+      <button class="px-btn gold" onclick="slotBet(-10)">-</button>
+      <span class="bet-display" id="slot-bet">10</span>
+      <button class="px-btn gold" onclick="slotBet(+10)">+</button>
+      <button class="px-btn gold" onclick="slotBet(999)">MAX</button>
+    </div>
+
+    <div style="text-align:center; margin-bottom:12px;">
+      <button class="px-btn green" id="spin-btn" onclick="spinSlots()" style="font-size:10px; padding:12px 24px; letter-spacing:3px;">▶ SPIN ◀</button>
+    </div>
+
+    <div class="result-msg" id="slot-result"></div>
+    <hr class="divider">
+    <div style="font-family:var(--vt); font-size:13px; color:var(--dim); text-align:center; line-height:1.8;">
+      🍒🍒🍒 = 2x &nbsp; 🍋🍋🍋 = 3x &nbsp; 🍇🍇🍇 = 5x<br>
+      ⭐⭐⭐ = 10x &nbsp; 💎💎💎 = 20x &nbsp; 7️⃣7️⃣7️⃣ = 50x
+    </div>
+  </div>
+  <div class="px-panel">
+    <div class="section-title" style="font-size:7px;">[ HISTORY ]</div>
+    <div class="history-list" id="slot-history"></div>
+  </div>
+</div>
+
+<!-- ===== BLACKJACK ===== -->
+<div id="sec-blackjack" class="game-section">
+  <div class="px-panel">
+    <div class="section-title">[ BLACKJACK ]</div>
+
+    <div class="area-label">DEALER</div>
+    <div class="card-area" id="dealer-cards"></div>
+    <div class="card-total" id="dealer-total"></div>
+
+    <hr class="divider">
+
+    <div class="area-label">PLAYER</div>
+    <div class="card-area" id="player-cards"></div>
+    <div class="card-total" id="player-total"></div>
+
+    <div class="result-msg" id="bj-result"></div>
+
+    <div class="bet-row">
+      <span class="bet-label">BET:</span>
+      <button class="px-btn gold" onclick="bjBet(-25)">-</button>
+      <span class="bet-display" id="bj-bet">25</span>
+      <button class="px-btn gold" onclick="bjBet(+25)">+</button>
+    </div>
+
+    <div class="bj-actions">
+      <button class="px-btn green" id="bj-deal" onclick="bjDeal()" style="font-size:9px; padding:10px 20px;">DEAL</button>
+      <button class="px-btn blue" id="bj-hit" onclick="bjHit()" disabled style="font-size:9px;">HIT</button>
+      <button class="px-btn red" id="bj-stand" onclick="bjStand()" disabled style="font-size:9px;">STAND</button>
+      <button class="px-btn gold" id="bj-double" onclick="bjDouble()" disabled style="font-size:9px;">DOUBLE</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ROULETTE ===== -->
+<div id="sec-roulette" class="game-section">
+  <div class="px-panel">
+    <div class="section-title">[ ROULETTE ]</div>
+
+    <div class="wheel-display" id="wheel-display">🎡</div>
+    <div id="wheel-result" style="text-align:center; font-family:var(--vt); font-size:20px; color:var(--dim); min-height:28px;"></div>
+
+    <hr class="divider">
+    <div style="font-size:7px; color:var(--dim); text-align:center; margin-bottom:8px; letter-spacing:1px;">CLICK NUMBER OR OUTSIDE BET</div>
+
+    <div id="roulette-board" class="roulette-board"></div>
+
+    <div class="roulette-outside" id="outside-bets">
+      <button class="r-outside-btn" onclick="selectOutside('1-18')">1-18</button>
+      <button class="r-outside-btn" onclick="selectOutside('19-36')">19-36</button>
+      <button class="r-outside-btn" onclick="selectOutside('even')">EVEN</button>
+      <button class="r-outside-btn" onclick="selectOutside('odd')">ODD</button>
+      <button class="r-outside-btn" onclick="selectOutside('red')" style="border-color:#8b0000; color:#ff6666;">RED</button>
+      <button class="r-outside-btn" onclick="selectOutside('black')">BLACK</button>
+    </div>
+
+    <div id="r-selection" style="text-align:center; font-family:var(--vt); font-size:16px; color:var(--gold); min-height:24px; margin-bottom:8px;"></div>
+
+    <div class="bet-row">
+      <span class="bet-label">BET:</span>
+      <button class="px-btn gold" onclick="rBet(-10)">-</button>
+      <span class="bet-display" id="r-bet">10</span>
+      <button class="px-btn gold" onclick="rBet(+10)">+</button>
+    </div>
+
+    <div style="text-align:center;">
+      <button class="px-btn cyan" id="r-spin-btn" onclick="spinRoulette()" style="font-size:9px; padding:10px 20px;">🎡 SPIN</button>
+    </div>
+
+    <div class="result-msg" id="r-result" style="margin-top:10px;"></div>
+  </div>
+</div>
+
+<!-- ===== DICE ===== -->
+<div id="sec-dice" class="game-section">
+  <div class="px-panel">
+    <div class="section-title">[ DICE — CRAPS STYLE ]</div>
+
+    <div class="dice-area">
+      <div class="die" id="die0">
+        <div class="dot" id="d0-a"></div><div class="dot" id="d0-b"></div>
+        <div class="dot" id="d0-c"></div><div class="dot" id="d0-e"></div><div class="dot" id="d0-d"></div>
+        <div class="dot" id="d0-f"></div><div class="dot" id="d0-g"></div>
+      </div>
+      <div class="die" id="die1">
+        <div class="dot" id="d1-a"></div><div class="dot" id="d1-b"></div>
+        <div class="dot" id="d1-c"></div><div class="dot" id="d1-e"></div><div class="dot" id="d1-d"></div>
+        <div class="dot" id="d1-f"></div><div class="dot" id="d1-g"></div>
+      </div>
+    </div>
+
+    <div class="dice-total-display" id="dice-total">▢ + ▢ = ?</div>
+
+    <hr class="divider">
+    <div style="font-size:7px; color:var(--dim); text-align:center; margin-bottom:10px; letter-spacing:1px;">CHOOSE YOUR BET TYPE</div>
+
+    <div class="dice-bets">
+      <button class="px-btn green" id="dbtn-hi" onclick="selectDiceBet('hi')">HI (11-12)<br><span style="font-size:6px; color:var(--dim)">×3</span></button>
+      <button class="px-btn red" id="dbtn-lo" onclick="selectDiceBet('lo')">LO (2-3)<br><span style="font-size:6px; color:var(--dim)">×3</span></button>
+      <button class="px-btn blue" id="dbtn-lucky7" onclick="selectDiceBet('lucky7')">LUCKY 7<br><span style="font-size:6px; color:var(--dim)">×4</span></button>
+      <button class="px-btn gold" id="dbtn-even" onclick="selectDiceBet('even')">EVEN<br><span style="font-size:6px; color:var(--dim)">×2</span></button>
+      <button class="px-btn cyan" id="dbtn-odd" onclick="selectDiceBet('odd')">ODD<br><span style="font-size:6px; color:var(--dim)">×2</span></button>
+      <button class="px-btn" id="dbtn-double" onclick="selectDiceBet('double')" style="border-color:var(--pink); color:var(--pink);">DOUBLE<br><span style="font-size:6px; color:var(--dim)">×6</span></button>
+    </div>
+
+    <div class="bet-row">
+      <span class="bet-label">BET:</span>
+      <button class="px-btn gold" onclick="diceBetAmt(-10)">-</button>
+      <span class="bet-display" id="dice-bet">10</span>
+      <button class="px-btn gold" onclick="diceBetAmt(+10)">+</button>
+    </div>
+
+    <div style="text-align:center;">
+      <button class="px-btn green" id="dice-roll-btn" onclick="rollDice()" style="font-size:10px; padding:12px 24px;">🎲 ROLL</button>
+    </div>
+
+    <div class="result-msg" id="dice-result" style="margin-top:10px;"></div>
+  </div>
+</div>
+
+<!-- ===== MISSIONS ===== -->
+<div id="sec-missions" class="game-section">
+  <div class="px-panel">
+    <div class="section-title">[ MISSION BOARD ]</div>
+    <div style="font-family:var(--vt); font-size:15px; color:var(--dim); text-align:center; margin-bottom:16px; letter-spacing:1px;">
+      완료하면 코인 보상! 진행상황은 자동 저장됩니다.
+    </div>
+    <div id="mission-list"></div>
+  </div>
+  <div class="px-panel">
+    <div class="section-title" style="font-size:7px;">[ COMPLETED ]</div>
+    <div class="history-list" id="mission-done-list" style="max-height:160px;"></div>
+  </div>
+</div>
+<!-- ===== FLAPPY BIRD ===== -->
+<div id="sec-flappy" class="game-section">
+  <div class="px-panel" style="padding:16px;">
+    <div class="section-title">[ FLAPPY BIRD ]</div>
+    <div style="font-family:var(--vt);font-size:15px;color:var(--dim);text-align:center;margin-bottom:10px;letter-spacing:1px;">
+      파이프 통과할 때마다 💰 코인 획득! &nbsp;|&nbsp; SPACE 또는 탭하여 점프
+    </div>
+    <div style="position:relative; display:flex; justify-content:center;">
+      <canvas id="flappy-canvas" width="400" height="500" style="border:3px solid var(--gold);box-shadow:0 0 16px var(--gold)44;cursor:pointer;max-width:100%;display:block;"></canvas>
+    </div>
+    <div style="display:flex;justify-content:center;gap:16px;margin-top:10px;flex-wrap:wrap;">
+      <div class="hud-item">
+        <div class="hud-label">🐦 점수</div>
+        <div class="hud-value" id="flappy-score">0</div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-label">🏆 최고</div>
+        <div class="hud-value" id="flappy-best">0</div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-label">💰 이번 판</div>
+        <div class="hud-value green" id="flappy-earned">0</div>
+      </div>
+    </div>
+    <div style="font-family:var(--vt);font-size:13px;color:var(--dim);text-align:center;margin-top:8px;line-height:1.8;">
+      1~4점: +5코인/파이프 &nbsp; 5~9점: +10코인/파이프 &nbsp; 10~19점: +20코인/파이프<br>
+      20~49점: +40코인/파이프 &nbsp; 50점+: +100코인/파이프
+    </div>
+  </div>
+</div>
+</main>
+
+<script>
+// ======== STATE ========
+let coins = 1000;
+let totalWin = 0, totalLose = 0, totalGames = 0;
+
+const SAVE_KEY = 'pixelcasino_save';
+
+function saveState() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      coins, totalWin, totalLose, totalGames, missionState,
+      winStreak, nolossStreak, gameWinStreak, roulColorStreak,
+      playCount, totalBetted, totalWinsCount, totalLossesCount,
+      totalEarned, brokeCount, resetCount, comboCounts,
+      roulHit:[...roulHit], diceDoubles:[...diceDoubles],
+      diceSums:[...diceSums], slotCombosHit:[...slotCombosHit],
+      allGamesPlayed:[...allGamesPlayed], allGames5,
+      allDiceTypesWon:[...allDiceTypesWon], bigwinReached
+    }));
+  } catch(e) {}
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    if (s.coins !== undefined) coins = s.coins;
+    if (s.totalWin !== undefined) totalWin = s.totalWin;
+    if (s.totalLose !== undefined) totalLose = s.totalLose;
+    if (s.totalGames !== undefined) totalGames = s.totalGames;
+    if (s.winStreak !== undefined) winStreak = s.winStreak;
+    if (s.nolossStreak !== undefined) nolossStreak = s.nolossStreak;
+    if (s.gameWinStreak !== undefined) gameWinStreak = s.gameWinStreak;
+    if (s.roulColorStreak !== undefined) roulColorStreak = s.roulColorStreak;
+    if (s.playCount !== undefined) playCount = s.playCount;
+    if (s.totalBetted !== undefined) totalBetted = s.totalBetted;
+    if (s.totalWinsCount !== undefined) totalWinsCount = s.totalWinsCount;
+    if (s.totalLossesCount !== undefined) totalLossesCount = s.totalLossesCount;
+    if (s.totalEarned !== undefined) totalEarned = s.totalEarned;
+    if (s.brokeCount !== undefined) brokeCount = s.brokeCount;
+    if (s.resetCount !== undefined) resetCount = s.resetCount;
+    if (s.comboCounts !== undefined) comboCounts = s.comboCounts;
+    if (s.roulHit) roulHit = new Set(s.roulHit);
+    if (s.diceDoubles) diceDoubles = new Set(s.diceDoubles);
+    if (s.diceSums) diceSums = new Set(s.diceSums);
+    if (s.slotCombosHit) slotCombosHit = new Set(s.slotCombosHit);
+    if (s.allGamesPlayed) allGamesPlayed = new Set(s.allGamesPlayed);
+    if (s.allGames5) allGames5 = s.allGames5;
+    if (s.allDiceTypesWon) allDiceTypesWon = new Set(s.allDiceTypesWon);
+    if (s.bigwinReached) bigwinReached = s.bigwinReached;
+    if (s.missionState) {
+      Object.keys(s.missionState).forEach(id => {
+        if (missionState[id] !== undefined) missionState[id] = s.missionState[id];
+      });
+    }
+  } catch(e) {}
+}
+
+function updateHUD() {
+  document.getElementById('coins-display').textContent = coins;
+  document.getElementById('total-win').textContent = totalWin;
+  document.getElementById('total-lose').textContent = totalLose;
+  document.getElementById('total-games').textContent = totalGames;
+}
+
+function resetCoins() {
+  coins = 1000; totalWin = 0; totalLose = 0; totalGames = 0;
+  winStreak = 0; nolossStreak = 0;
+  gameWinStreak = {slots:0,blackjack:0,roulette:0,dice:0};
+  roulColorStreak = {red:0,black:0};
+  playCount = {slots:0,blackjack:0,roulette:0,dice:0};
+  totalBetted = 0; totalWinsCount = 0; totalLossesCount = 0;
+  totalEarned = 0; brokeCount = 0; comboCounts = {};
+  roulHit = new Set(); diceDoubles = new Set(); diceSums = new Set();
+  slotCombosHit = new Set(); allGamesPlayed = new Set();
+  allGames5 = {slots:0,blackjack:0,roulette:0,dice:0};
+  allDiceTypesWon = new Set(); bigwinReached = {};
+  sessionStart = Date.now(); earlyBirdDone = false;
+  MISSIONS.forEach(m => { missionState[m.id] = {progress:0,claimed:false}; });
+  resetCount++;
+  trackMission('reset_btn');
+  saveState();
+  updateHUD();
+  renderMissions();
+  checkMissionNotify();
+  document.getElementById('mission-done-list').innerHTML = '';
+}
+
+function reward(amount) {
+  coins += amount;
+  if (amount > 0) totalWin += amount;
+  else totalLose += Math.abs(amount);
+  totalGames++;
+  updateHUD();
+  saveState();
+}
+
+function popCoins(x, y, win) {
+  const el = document.createElement('div');
+  el.className = 'coin-pop';
+  el.textContent = win ? '💰' : '💸';
+  el.style.left = (x - 15) + 'px';
+  el.style.top = (y - 15) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 900);
+}
+
+// ======== TABS ========
+function switchTab(name) {
+  document.querySelectorAll('.game-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'missions') renderMissions();
+}
+
+// ======== SLOTS ========
+const SYMBOLS = ['🍒','🍋','🍇','🍊','⭐','💎','7️⃣'];
+const PAYOUTS = {'🍒':2,'🍋':3,'🍇':5,'🍊':4,'⭐':10,'💎':20,'7️⃣':50};
+let slotBetAmt = 10;
+let slotSpinning = false;
+
+function initReels() {
+  [0,1,2].forEach(i => {
+    const ri = document.getElementById('ri'+i);
+    ri.innerHTML = '';
+    for (let r=0; r<12; r++) {
+      const d = document.createElement('div');
+      d.className = 'reel-symbol';
+      d.textContent = SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)];
+      ri.appendChild(d);
+    }
+  });
+}
+initReels();
+
+function slotBet(d) {
+  if (d === 999) slotBetAmt = Math.min(coins, 100);
+  else slotBetAmt = Math.max(10, Math.min(coins, slotBetAmt + d));
+  document.getElementById('slot-bet').textContent = slotBetAmt;
+}
+
+function spinSlots() {
+  if (slotSpinning || coins < slotBetAmt) {
+    if (coins < slotBetAmt) showResult('slot-result','❌ NOT ENOUGH COINS','lose');
+    return;
+  }
+  slotSpinning = true;
+  document.getElementById('spin-btn').disabled = true;
+  document.getElementById('slot-result').textContent = '';
+
+  coins -= slotBetAmt;
+  updateHUD();
+
+  const results = SYMBOLS.map(() => SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)]);
+
+  [0,1,2].forEach(i => {
+    const win = document.getElementById('reel'+i);
+    win.classList.add('spinning');
+  });
+
+  const delays = [600, 900, 1200];
+  [0,1,2].forEach((i) => {
+    setTimeout(() => {
+      const win = document.getElementById('reel'+i);
+      win.classList.remove('spinning');
+      const ri = document.getElementById('ri'+i);
+      ri.innerHTML = '';
+      // show result in middle
+      ['▪','▪', results[i], '▪','▪'].forEach(sym => {
+        const d = document.createElement('div');
+        d.className = 'reel-symbol';
+        d.textContent = sym === '▪' ? SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)] : sym;
+        ri.appendChild(d);
+      });
+      ri.style.transform = 'translateY(-144px)';
+
+      if (i === 2) {
+        setTimeout(() => evalSlots(results), 200);
+      }
+    }, delays[i]);
+  });
+}
+
+function evalSlots(r) {
+  let win = 0;
+  const hist = document.getElementById('slot-history');
+  trackMission('play', {game:'slots'});
+  trackMission('bet', {amount: slotBetAmt, game:'slots'});
+
+  // detect combo
+  if (r[0]===r[1] && r[1]===r[2]) {
+    win = slotBetAmt * PAYOUTS[r[0]];
+    showResult('slot-result', `🎉 ${r.join('')}  WIN! +${win}`, 'win');
+    addHistory(hist, `${r.join('')} WIN +${win}`, 'win');
+    popCoins(window.innerWidth/2, 200, true);
+    trackMission('win');
+    trackMission('game_result', {game:'slots', won:true});
+    trackMission('earned', {amount: win});
+    // slot combo fires
+    const comboMap = {'7️⃣':'777','💎':'diamond','⭐':'star','🍒':'cherry','🍋':'lemon','🍇':'grape','🍊':'orange'};
+    if (comboMap[r[0]]) trackMission('combo', {combo: comboMap[r[0]]});
+    // multiplier combos
+    if (r[0]==='7️⃣') trackMission('combo', {combo:'slot50x'});
+    if (r[0]==='💎') trackMission('combo', {combo:'slot20x'});
+    if (r[0]==='⭐') trackMission('combo', {combo:'slot10x'});
+  } else {
+    showResult('slot-result', `${r.join('')}  LOSE`, 'lose');
+    addHistory(hist, `${r.join('')} LOSE -${slotBetAmt}`, 'lose');
+    trackMission('lose');
+    trackMission('game_result', {game:'slots', won:false});
+  }
+  reward(win - (win ? 0 : slotBetAmt));
+  if (win > 0) coins += win;
+  updateHUD();
+  trackMission('coins_check');
+  slotSpinning = false;
+  document.getElementById('spin-btn').disabled = false;
+}
+
+// ======== BLACKJACK ========
+let bjBetAmt = 25;
+let deck = [], playerHand = [], dealerHand = [], bjInGame = false;
+
+const SUITS = ['♠','♥','♦','♣'];
+const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+
+function newDeck() {
+  deck = [];
+  for (let s of SUITS) for (let r of RANKS) deck.push({r,s});
+  for (let i=deck.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [deck[i],deck[j]] = [deck[j],deck[i]];
+  }
+}
+
+function cardValue(r) {
+  if (['J','Q','K'].includes(r)) return 10;
+  if (r==='A') return 11;
+  return parseInt(r);
+}
+
+function handTotal(hand) {
+  let total = 0, aces = 0;
+  for (let c of hand) {
+    total += cardValue(c.r);
+    if (c.r==='A') aces++;
+  }
+  while (total > 21 && aces > 0) { total -= 10; aces--; }
+  return total;
+}
+
+function renderCards(hand, elId, hideSecond=false) {
+  const el = document.getElementById(elId);
+  el.innerHTML = '';
+  hand.forEach((c,i) => {
+    const div = document.createElement('div');
+    const isRed = c.s==='♥'||c.s==='♦';
+    if (hideSecond && i===1) {
+      div.className = 'card hidden';
+    } else {
+      div.className = 'card' + (isRed ? ' red-card' : '');
+      div.innerHTML = `<div class="card-rank">${c.r}</div><div class="card-suit">${c.s}</div>`;
+    }
+    el.appendChild(div);
+  });
+}
+
+function bjBet(d) {
+  bjBetAmt = Math.max(25, Math.min(coins, bjBetAmt + d));
+  document.getElementById('bj-bet').textContent = bjBetAmt;
+}
+
+function bjDeal() {
+  if (coins < bjBetAmt) { showResult('bj-result','❌ NOT ENOUGH','lose'); return; }
+  newDeck();
+  playerHand = [deck.pop(), deck.pop()];
+  dealerHand = [deck.pop(), deck.pop()];
+  bjInGame = true;
+  coins -= bjBetAmt; updateHUD();
+  renderCards(playerHand, 'player-cards');
+  renderCards(dealerHand, 'dealer-cards', true);
+  document.getElementById('player-total').textContent = 'TOTAL: ' + handTotal(playerHand);
+  document.getElementById('dealer-total').textContent = 'DEALER: ?';
+  document.getElementById('bj-result').textContent = '';
+  setbjBtns(true);
+
+  if (handTotal(playerHand)===21) { bjStand(); }
+}
+
+function bjHit() {
+  playerHand.push(deck.pop());
+  renderCards(playerHand, 'player-cards');
+  const t = handTotal(playerHand);
+  document.getElementById('player-total').textContent = 'TOTAL: ' + t;
+  if (t >= 21) bjStand();
+}
+
+function bjDouble() {
+  if (coins < bjBetAmt) return;
+  coins -= bjBetAmt; bjBetAmt *= 2; updateHUD();
+  trackMission('combo', {combo:'bjdouble'});
+  bjHit();
+  if (handTotal(playerHand) <= 21) bjStand();
+}
+
+function bjStand() {
+  setbjBtns(false);
+  while (handTotal(dealerHand) < 17) dealerHand.push(deck.pop());
+  renderCards(dealerHand, 'dealer-cards');
+  const pt = handTotal(playerHand), dt = handTotal(dealerHand);
+  document.getElementById('player-total').textContent = 'TOTAL: ' + pt;
+  document.getElementById('dealer-total').textContent = 'DEALER: ' + dt;
+
+  let msg, cls, win = 0;
+  if (pt > 21)      { msg='BUST! LOSE'; cls='lose'; trackMission('combo',{combo:'bjbust'}); }
+  else if (dt > 21) { msg='DEALER BUST! WIN!'; cls='win'; win=bjBetAmt*2; trackMission('combo',{combo:'bjdealerbust'}); }
+  else if (pt > dt) { msg='YOU WIN! 🎉'; cls='win'; win=bjBetAmt*2; }
+  else if (pt < dt) { msg='DEALER WINS'; cls='lose'; }
+  else              { msg='PUSH — TIE'; cls='push'; win=bjBetAmt; trackMission('combo',{combo:'bjpush'}); }
+
+  showResult('bj-result', msg, cls);
+  if (win > 0) { coins += win; }
+  reward(win - bjBetAmt);
+  updateHUD();
+
+  trackMission('play', {game:'blackjack'});
+  trackMission('bet', {amount: bjBetAmt, game:'blackjack'});
+  // score combos
+  if (!['bust','lose'].includes(cls)) {
+    if (pt===21) trackMission('combo',{combo:'bj21'});
+    if (pt===20) trackMission('combo',{combo:'bj20'});
+    if (pt===19) trackMission('combo',{combo:'bj19'});
+    if (pt===18) trackMission('combo',{combo:'bj18'});
+    if (pt===17) trackMission('combo',{combo:'bj17'});
+  }
+  if (cls==='win') { trackMission('win'); trackMission('game_result',{game:'blackjack',won:true}); trackMission('earned',{amount:win-bjBetAmt}); }
+  else if (cls==='lose') { trackMission('lose'); trackMission('game_result',{game:'blackjack',won:false}); }
+  else if (cls==='push') { trackMission('push'); }
+  trackMission('coins_check');
+
+  bjBetAmt = Math.min(25, coins);
+  document.getElementById('bj-bet').textContent = bjBetAmt;
+}
+
+function setbjBtns(inGame) {
+  ['bj-deal','bj-hit','bj-stand','bj-double'].forEach(id => {
+    document.getElementById(id).disabled = id==='bj-deal' ? inGame : !inGame;
+  });
+}
+
+// ======== ROULETTE ========
+const R_REDS = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+let rBetAmt = 10;
+let rSelection = null;
+let rSpinning = false;
+
+function buildBoard() {
+  const board = document.getElementById('roulette-board');
+  board.innerHTML = '';
+  // 0
+  const z = document.createElement('div');
+  z.className = 'r-cell r-green';
+  z.textContent = '0';
+  z.style.gridColumn = '1 / span 1';
+  z.onclick = () => selectNumber(0);
+  board.appendChild(z);
+  // 1-36 in rows of 3 (columns)
+  for (let n=1; n<=36; n++) {
+    const c = document.createElement('div');
+    const isRed = R_REDS.includes(n);
+    c.className = 'r-cell ' + (isRed ? 'r-red' : 'r-black');
+    c.textContent = n;
+    c.id = 'rcell-' + n;
+    c.onclick = () => selectNumber(n);
+    board.appendChild(c);
+  }
+}
+buildBoard();
+
+function selectNumber(n) {
+  rSelection = {type:'number', value:n};
+  document.querySelectorAll('.r-cell').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.r-outside-btn').forEach(b => b.classList.remove('selected'));
+  const cell = n === 0 ? document.querySelector('.r-green') : document.getElementById('rcell-'+n);
+  if (cell) cell.classList.add('selected');
+  document.getElementById('r-selection').textContent = 'BET: NUMBER ' + n + ' (×35)';
+}
+
+function selectOutside(type) {
+  rSelection = {type:'outside', value: type};
+  document.querySelectorAll('.r-cell').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.r-outside-btn').forEach(b => b.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  const labels = {'1-18':'1-18 (×2)','19-36':'19-36 (×2)','even':'EVEN (×2)','odd':'ODD (×2)','red':'RED (×2)','black':'BLACK (×2)'};
+  document.getElementById('r-selection').textContent = 'BET: ' + labels[type];
+}
+
+function rBet(d) {
+  rBetAmt = Math.max(10, Math.min(coins, rBetAmt + d));
+  document.getElementById('r-bet').textContent = rBetAmt;
+}
+
+function spinRoulette() {
+  if (rSpinning) return;
+  if (!rSelection) { showResult('r-result','❌ SELECT A BET FIRST','lose'); return; }
+  if (coins < rBetAmt) { showResult('r-result','❌ NOT ENOUGH COINS','lose'); return; }
+
+  rSpinning = true;
+  document.getElementById('r-spin-btn').disabled = true;
+  coins -= rBetAmt; updateHUD();
+  trackMission('play', {game:'roulette'});
+  trackMission('bet', {amount: rBetAmt, game:'roulette'});
+
+  const wheel = document.getElementById('wheel-display');
+  wheel.innerHTML = '<span class="spinning-wheel">🎡</span>';
+  document.getElementById('r-result').textContent = '';
+  document.getElementById('wheel-result').textContent = '';
+
+  const result = Math.floor(Math.random() * 37);
+
+  setTimeout(() => {
+    wheel.innerHTML = '🎡';
+    const isRed = R_REDS.includes(result);
+    const color = result === 0 ? '🟢' : isRed ? '🔴' : '⚫';
+    document.getElementById('wheel-result').textContent = `${color} ${result}`;
+
+    if (result > 0) {
+      const cell = document.getElementById('rcell-'+result);
+      if (cell) { cell.classList.add('hit'); setTimeout(()=>cell.classList.remove('hit'),700); }
+    }
+
+    // number combo
+    trackMission('combo', {combo: 'roul'+result});
+    // color streak
+    if (result === 0) { trackMission('roul_color', {color:'green'}); }
+    else if (isRed)   { trackMission('roul_color', {color:'red'}); }
+    else              { trackMission('roul_color', {color:'black'}); }
+
+    let win = 0;
+    const s = rSelection;
+    if (s.type === 'number') {
+      if (s.value === result) win = rBetAmt * 35;
+    } else {
+      const v = s.value;
+      let hit = false;
+      if (v==='red' && isRed) hit=true;
+      else if (v==='black' && !isRed && result!==0) hit=true;
+      else if (v==='even' && result!==0 && result%2===0) hit=true;
+      else if (v==='odd' && result%2===1) hit=true;
+      else if (v==='1-18' && result>=1 && result<=18) hit=true;
+      else if (v==='19-36' && result>=19 && result<=36) hit=true;
+      if (hit) win = rBetAmt * 2;
+    }
+
+    if (win > 0) {
+      coins += win;
+      showResult('r-result', `🎉 WIN! +${win - rBetAmt}`, 'win');
+      popCoins(window.innerWidth/2, 200, true);
+      trackMission('win');
+      trackMission('game_result', {game:'roulette', won:true});
+      trackMission('earned', {amount: win - rBetAmt});
+    } else {
+      showResult('r-result', `LOSE -${rBetAmt}`, 'lose');
+      trackMission('lose');
+      trackMission('game_result', {game:'roulette', won:false});
+    }
+    reward(win - rBetAmt);
+    updateHUD();
+    trackMission('coins_check');
+    rSpinning = false;
+    document.getElementById('r-spin-btn').disabled = false;
+  }, 1800);
+}
+
+// ======== DICE ========
+const DOT_MAPS = {
+  1: ['e'],
+  2: ['a','g'],
+  3: ['a','e','g'],
+  4: ['a','b','f','g'],
+  5: ['a','b','e','f','g'],
+  6: ['a','b','c','d','f','g']
+};
+
+let diceBetType = null;
+let diceBetAmtVal = 10;
+
+function renderDie(dieIdx, val) {
+  const letters = ['a','b','c','d','e','f','g'];
+  letters.forEach(l => {
+    const el = document.getElementById(`d${dieIdx}-${l}`);
+    el.classList.remove('show','red-dot');
+    if (DOT_MAPS[val] && DOT_MAPS[val].includes(l)) {
+      el.classList.add('show');
+      if (val === 1) el.classList.add('red-dot');
+    }
+  });
+}
+
+function selectDiceBet(type) {
+  diceBetType = type;
+  ['hi','lo','lucky7','even','odd','double'].forEach(t => {
+    const b = document.getElementById('dbtn-'+t);
+    if (b) b.style.opacity = t===type ? '1' : '0.4';
+  });
+}
+
+function diceBetAmt(d) {
+  diceBetAmtVal = Math.max(10, Math.min(coins, diceBetAmtVal + d));
+  document.getElementById('dice-bet').textContent = diceBetAmtVal;
+}
+
+function rollDice() {
+  if (!diceBetType) { showResult('dice-result','❌ SELECT BET TYPE','lose'); return; }
+  if (coins < diceBetAmtVal) { showResult('dice-result','❌ NOT ENOUGH COINS','lose'); return; }
+
+  document.getElementById('dice-roll-btn').disabled = true;
+  coins -= diceBetAmtVal; updateHUD();
+  document.getElementById('dice-result').textContent = '';
+
+  const d0 = document.getElementById('die0');
+  const d1 = document.getElementById('die1');
+  d0.classList.add('rolling');
+  d1.classList.add('rolling');
+
+  // Animate random faces
+  let ticks = 0;
+  const ticker = setInterval(() => {
+    renderDie(0, Math.ceil(Math.random()*6));
+    renderDie(1, Math.ceil(Math.random()*6));
+    ticks++;
+    if (ticks > 8) {
+      clearInterval(ticker);
+      d0.classList.remove('rolling');
+      d1.classList.remove('rolling');
+
+      const v0 = Math.ceil(Math.random()*6);
+      const v1 = Math.ceil(Math.random()*6);
+      renderDie(0, v0);
+      renderDie(1, v1);
+      const total = v0 + v1;
+      document.getElementById('dice-total').textContent = `${v0} + ${v1} = ${total}`;
+
+      evalDice(total, v0, v1);
+    }
+  }, 80);
+}
+
+function evalDice(total, v0, v1) {
+  let win = 0;
+  const t = diceBetType;
+  if (t==='hi' && total>=11) win = diceBetAmtVal * 3;
+  else if (t==='lo' && total<=3) win = diceBetAmtVal * 3;
+  else if (t==='lucky7' && total===7) win = diceBetAmtVal * 4;
+  else if (t==='even' && total%2===0) win = diceBetAmtVal * 2;
+  else if (t==='odd' && total%2===1) win = diceBetAmtVal * 2;
+  else if (t==='double' && v0===v1) win = diceBetAmtVal * 6;
+
+  // sum combos
+  trackMission('combo', {combo: 'dicesum'+total});
+  // double combos
+  if (v0===v1) {
+    trackMission('combo', {combo: 'dice'+v0+''+v1});
+  }
+
+  if (win > 0) {
+    coins += win;
+    showResult('dice-result', `🎉 WIN! +${win - diceBetAmtVal}`, 'win');
+    popCoins(window.innerWidth/2, 200, true);
+    trackMission('win');
+    trackMission('game_result', {game:'dice', won:true});
+    trackMission('earned', {amount: win - diceBetAmtVal});
+    // bet type win combos
+    const betWinMap = {hi:'dice_hi_win', lo:'dice_lo_win', lucky7:'dice_7_win', even:'dice_even_win', odd:'dice_odd_win', double:'dice_dbl_win'};
+    if (betWinMap[t]) trackMission('combo', {combo: betWinMap[t]});
+  } else {
+    showResult('dice-result', `LOSE -${diceBetAmtVal}`, 'lose');
+    trackMission('lose');
+    trackMission('game_result', {game:'dice', won:false});
+  }
+  trackMission('play', {game:'dice'});
+  trackMission('bet', {amount: diceBetAmtVal, game:'dice'});
+  reward(win - diceBetAmtVal);
+  updateHUD();
+  trackMission('coins_check');
+  document.getElementById('dice-roll-btn').disabled = false;
+}
+
+// ======== UTILS ========
+function showResult(id, msg, cls) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'result-msg ' + cls;
+}
+
+function addHistory(el, text, cls) {
+  const d = document.createElement('div');
+  d.className = cls==='win' ? 'h-win' : 'h-lose';
+  d.textContent = '> ' + text;
+  el.prepend(d);
+  if (el.children.length > 20) el.lastChild.remove();
+}
+
+// ======== MISSION SYSTEM ========
+const MISSIONS = [
+  // ── 연속 승리 (streak) ──────────────────────────────
+  { id:'win2',   name:'🔥 2연승',       desc:'2판 연속으로 이기기',    reward:80,    type:'streak', target:2 },
+  { id:'win3',   name:'🔥 3연승',       desc:'3판 연속으로 이기기',    reward:150,   type:'streak', target:3 },
+  { id:'win5',   name:'⚡ 5연승',       desc:'5판 연속으로 이기기',    reward:400,   type:'streak', target:5 },
+  { id:'win7',   name:'💫 7연승',       desc:'7판 연속으로 이기기',    reward:700,   type:'streak', target:7 },
+  { id:'win10',  name:'💀 10연승',      desc:'10판 연속으로 이기기',   reward:1200,  type:'streak', target:10 },
+  { id:'win15',  name:'👻 15연승',      desc:'15판 연속으로 이기기',   reward:2500,  type:'streak', target:15 },
+  { id:'win20',  name:'🌟 20연승',      desc:'20판 연속으로 이기기',   reward:5000,  type:'streak', target:20 },
+  { id:'win30',  name:'🏆 30연승',      desc:'30판 연속으로 이기기',   reward:10000, type:'streak', target:30 },
+  { id:'win50',  name:'👑 50연승',      desc:'50판 연속으로 이기기',   reward:25000, type:'streak', target:50 },
+
+  // ── 총 승리 횟수 (wins_total) ───────────────────────
+  { id:'tw5',    name:'✅ 첫 5승',      desc:'총 5번 이기기',          reward:50,    type:'wins_total', target:5 },
+  { id:'tw10',   name:'✅ 10승 달성',   desc:'총 10번 이기기',         reward:100,   type:'wins_total', target:10 },
+  { id:'tw25',   name:'🎖 25승',        desc:'총 25번 이기기',         reward:200,   type:'wins_total', target:25 },
+  { id:'tw50',   name:'🎖 50승',        desc:'총 50번 이기기',         reward:400,   type:'wins_total', target:50 },
+  { id:'tw100',  name:'🥉 100승',       desc:'총 100번 이기기',        reward:800,   type:'wins_total', target:100 },
+  { id:'tw200',  name:'🥈 200승',       desc:'총 200번 이기기',        reward:1500,  type:'wins_total', target:200 },
+  { id:'tw500',  name:'🥇 500승',       desc:'총 500번 이기기',        reward:4000,  type:'wins_total', target:500 },
+  { id:'tw1000', name:'💎 1000승',      desc:'총 1000번 이기기',       reward:10000, type:'wins_total', target:1000 },
+
+  // ── 총 패배 횟수 (losses_total) ────────────────────
+  { id:'tl10',   name:'😢 10번 졌어',   desc:'총 10번 지기',           reward:50,    type:'losses_total', target:10 },
+  { id:'tl50',   name:'😭 50번 졌어',   desc:'총 50번 지기',           reward:150,   type:'losses_total', target:50 },
+  { id:'tl100',  name:'💔 100번 졌어',  desc:'총 100번 지기',          reward:300,   type:'losses_total', target:100 },
+  { id:'tl300',  name:'🪦 300번 졌어',  desc:'총 300번 지기',          reward:800,   type:'losses_total', target:300 },
+  { id:'tl500',  name:'☠️ 500패의 전설',desc:'총 500번 지기',          reward:1500,  type:'losses_total', target:500 },
+
+  // ── 슬롯 플레이 횟수 ───────────────────────────────
+  { id:'ps1',    name:'🎰 슬롯 입문',    desc:'슬롯 1번 플레이',        reward:10,    type:'play', game:'slots', target:1 },
+  { id:'ps5',    name:'🎰 슬롯 5번',     desc:'슬롯 5번 플레이',        reward:30,    type:'play', game:'slots', target:5 },
+  { id:'ps10',   name:'🎰 슬롯 10번',    desc:'슬롯 10번 플레이',       reward:60,    type:'play', game:'slots', target:10 },
+  { id:'ps25',   name:'🎰 슬롯 25번',    desc:'슬롯 25번 플레이',       reward:120,   type:'play', game:'slots', target:25 },
+  { id:'ps50',   name:'🎰 슬롯 마니아',  desc:'슬롯 50번 플레이',       reward:250,   type:'play', game:'slots', target:50 },
+  { id:'ps100',  name:'🎰 슬롯 중독',    desc:'슬롯 100번 플레이',      reward:500,   type:'play', game:'slots', target:100 },
+  { id:'ps200',  name:'🎰 슬롯 전문가',  desc:'슬롯 200번 플레이',      reward:1000,  type:'play', game:'slots', target:200 },
+  { id:'ps500',  name:'🎰 슬롯 장인',    desc:'슬롯 500번 플레이',      reward:3000,  type:'play', game:'slots', target:500 },
+  { id:'ps1000', name:'🎰 슬롯 신',      desc:'슬롯 1000번 플레이',     reward:8000,  type:'play', game:'slots', target:1000 },
+
+  // ── 블랙잭 플레이 횟수 ─────────────────────────────
+  { id:'pb1',    name:'🃏 블랙잭 입문',  desc:'블랙잭 1번 플레이',      reward:10,    type:'play', game:'blackjack', target:1 },
+  { id:'pb5',    name:'🃏 블랙잭 5번',   desc:'블랙잭 5번 플레이',      reward:30,    type:'play', game:'blackjack', target:5 },
+  { id:'pb10',   name:'🃏 블랙잭 10번',  desc:'블랙잭 10번 플레이',     reward:60,    type:'play', game:'blackjack', target:10 },
+  { id:'pb25',   name:'🃏 카드 플레이어',desc:'블랙잭 25번 플레이',     reward:120,   type:'play', game:'blackjack', target:25 },
+  { id:'pb50',   name:'🃏 딜러 킬러',    desc:'블랙잭 50번 플레이',     reward:250,   type:'play', game:'blackjack', target:50 },
+  { id:'pb100',  name:'🃏 카드 마스터',  desc:'블랙잭 100번 플레이',    reward:500,   type:'play', game:'blackjack', target:100 },
+  { id:'pb200',  name:'🃏 블랙잭 신',    desc:'블랙잭 200번 플레이',    reward:1200,  type:'play', game:'blackjack', target:200 },
+  { id:'pb500',  name:'🃏 카지노 전설',  desc:'블랙잭 500번 플레이',    reward:4000,  type:'play', game:'blackjack', target:500 },
+
+  // ── 룰렛 플레이 횟수 ───────────────────────────────
+  { id:'pr1',    name:'🎡 룰렛 입문',    desc:'룰렛 1번 플레이',        reward:10,    type:'play', game:'roulette', target:1 },
+  { id:'pr5',    name:'🎡 룰렛 5번',     desc:'룰렛 5번 플레이',        reward:30,    type:'play', game:'roulette', target:5 },
+  { id:'pr10',   name:'🎡 룰렛 10번',    desc:'룰렛 10번 플레이',       reward:60,    type:'play', game:'roulette', target:10 },
+  { id:'pr25',   name:'🎡 룰렛 25번',    desc:'룰렛 25번 플레이',       reward:120,   type:'play', game:'roulette', target:25 },
+  { id:'pr50',   name:'🎡 룰렛 마니아',  desc:'룰렛 50번 플레이',       reward:250,   type:'play', game:'roulette', target:50 },
+  { id:'pr100',  name:'🎡 휠 마스터',    desc:'룰렛 100번 플레이',      reward:600,   type:'play', game:'roulette', target:100 },
+  { id:'pr300',  name:'🎡 룰렛 전설',    desc:'룰렛 300번 플레이',      reward:2000,  type:'play', game:'roulette', target:300 },
+
+  // ── 주사위 플레이 횟수 ─────────────────────────────
+  { id:'pd1',    name:'🎲 주사위 입문',  desc:'주사위 1번 굴리기',      reward:10,    type:'play', game:'dice', target:1 },
+  { id:'pd5',    name:'🎲 주사위 5번',   desc:'주사위 5번 굴리기',      reward:30,    type:'play', game:'dice', target:5 },
+  { id:'pd10',   name:'🎲 주사위 10번',  desc:'주사위 10번 굴리기',     reward:60,    type:'play', game:'dice', target:10 },
+  { id:'pd25',   name:'🎲 다이스 롤러',  desc:'주사위 25번 굴리기',     reward:120,   type:'play', game:'dice', target:25 },
+  { id:'pd50',   name:'🎲 다이스 마니아',desc:'주사위 50번 굴리기',     reward:250,   type:'play', game:'dice', target:50 },
+  { id:'pd100',  name:'🎲 주사위 마스터',desc:'주사위 100번 굴리기',    reward:600,   type:'play', game:'dice', target:100 },
+  { id:'pd300',  name:'🎲 주사위 신',    desc:'주사위 300번 굴리기',    reward:2000,  type:'play', game:'dice', target:300 },
+
+  // ── 전체 플레이 횟수 ───────────────────────────────
+  { id:'pa10',   name:'🎮 게이머',       desc:'아무 게임 10번 플레이',  reward:80,    type:'play', game:'any', target:10 },
+  { id:'pa25',   name:'🎮 게임 팬',      desc:'아무 게임 25번 플레이',  reward:150,   type:'play', game:'any', target:25 },
+  { id:'pa50',   name:'🎮 게임 중독자',  desc:'아무 게임 50번 플레이',  reward:300,   type:'play', game:'any', target:50 },
+  { id:'pa100',  name:'🎮 풀타임 겜블러',desc:'아무 게임 100번 플레이', reward:600,   type:'play', game:'any', target:100 },
+  { id:'pa200',  name:'🎮 카지노 거주자',desc:'아무 게임 200번 플레이', reward:1200,  type:'play', game:'any', target:200 },
+  { id:'pa500',  name:'🎮 카지노 영혼',  desc:'아무 게임 500번 플레이', reward:3000,  type:'play', game:'any', target:500 },
+  { id:'pa1000', name:'🎮 카지노 전설',  desc:'아무 게임 1000번 플레이',reward:8000,  type:'play', game:'any', target:1000 },
+  { id:'pa2000', name:'🎮 카지노의 신',  desc:'아무 게임 2000번 플레이',reward:20000, type:'play', game:'any', target:2000 },
+
+  // ── 총 베팅액 ──────────────────────────────────────
+  { id:'bet500',    name:'💸 첫 베팅',       desc:'총 베팅액 500 달성',       reward:50,    type:'bet', target:500 },
+  { id:'bet1000',   name:'💸 베터 입문',     desc:'총 베팅액 1,000 달성',     reward:100,   type:'bet', target:1000 },
+  { id:'bet2500',   name:'💸 2,500 베팅',    desc:'총 베팅액 2,500 달성',     reward:200,   type:'bet', target:2500 },
+  { id:'bet5000',   name:'💰 5천 베팅',      desc:'총 베팅액 5,000 달성',     reward:300,   type:'bet', target:5000 },
+  { id:'bet10000',  name:'💰 만 원 베팅',    desc:'총 베팅액 10,000 달성',    reward:600,   type:'bet', target:10000 },
+  { id:'bet25000',  name:'💰 2.5만 베팅',    desc:'총 베팅액 25,000 달성',    reward:1200,  type:'bet', target:25000 },
+  { id:'bet50000',  name:'💎 5만 베팅',      desc:'총 베팅액 50,000 달성',    reward:2500,  type:'bet', target:50000 },
+  { id:'bet100000', name:'💎 10만 베팅',     desc:'총 베팅액 100,000 달성',   reward:5000,  type:'bet', target:100000 },
+  { id:'bet250000', name:'👑 25만 베팅',     desc:'총 베팅액 250,000 달성',   reward:12000, type:'bet', target:250000 },
+  { id:'bet500000', name:'👑 50만 베팅',     desc:'총 베팅액 500,000 달성',   reward:25000, type:'bet', target:500000 },
+  { id:'bet1m',     name:'🌌 백만 베터',     desc:'총 베팅액 1,000,000 달성', reward:60000, type:'bet', target:1000000 },
+
+  // ── 슬롯 특정 조합 ─────────────────────────────────
+  { id:'slot777',    name:'7️⃣ 잭팟!',       desc:'슬롯에서 777 달성',         reward:500,  type:'combo', combo:'777',    target:1 },
+  { id:'slot777x3',  name:'7️⃣ 잭팟 3번',    desc:'슬롯에서 777 3번 달성',     reward:1500, type:'combo_count', combo:'777',    target:3 },
+  { id:'slot777x10', name:'7️⃣ 잭팟 10번',   desc:'슬롯에서 777 10번 달성',    reward:6000, type:'combo_count', combo:'777',    target:10 },
+  { id:'slotDIA',    name:'💎 다이아 잭팟',  desc:'슬롯에서 💎💎💎 달성',     reward:400,  type:'combo', combo:'diamond', target:1 },
+  { id:'slotDIAx3',  name:'💎 다이아 3번',   desc:'슬롯에서 💎💎💎 3번 달성', reward:1200, type:'combo_count', combo:'diamond', target:3 },
+  { id:'slotSTAR',   name:'⭐ 별 잭팟',      desc:'슬롯에서 ⭐⭐⭐ 달성',    reward:300,  type:'combo', combo:'star',   target:1 },
+  { id:'slotSTARx5', name:'⭐ 별 5번',       desc:'슬롯에서 ⭐⭐⭐ 5번 달성',reward:1200, type:'combo_count', combo:'star',   target:5 },
+  { id:'slotCHER',   name:'🍒 체리 잭팟',    desc:'슬롯에서 🍒🍒🍒 달성',    reward:100,  type:'combo', combo:'cherry', target:1 },
+  { id:'slotCHERx5', name:'🍒 체리 5번',     desc:'슬롯에서 🍒🍒🍒 5번 달성',reward:400,  type:'combo_count', combo:'cherry', target:5 },
+  { id:'slotCHERx20',name:'🍒 체리 20번',    desc:'슬롯에서 🍒🍒🍒 20번 달성',reward:1500, type:'combo_count', combo:'cherry', target:20 },
+  { id:'slotLEM',    name:'🍋 레몬 잭팟',    desc:'슬롯에서 🍋🍋🍋 달성',    reward:150,  type:'combo', combo:'lemon',  target:1 },
+  { id:'slotGRP',    name:'🍇 포도 잭팟',    desc:'슬롯에서 🍇🍇🍇 달성',    reward:200,  type:'combo', combo:'grape',  target:1 },
+  { id:'slotORG',    name:'🍊 오렌지 잭팟',  desc:'슬롯에서 🍊🍊🍊 달성',    reward:200,  type:'combo', combo:'orange', target:1 },
+  { id:'slotALL',    name:'🌈 모든 잭팟',    desc:'슬롯 7가지 조합 모두 달성',reward:5000, type:'all_slots', target:7 },
+
+  // ── 블랙잭 특수 조합 ───────────────────────────────
+  { id:'bj21',      name:'🃏 퍼펙트 21',     desc:'블랙잭에서 정확히 21 달성',  reward:300,  type:'combo', combo:'bj21',  target:1 },
+  { id:'bj21x5',    name:'🃏 퍼펙트 5번',    desc:'블랙잭 21 5번 달성',         reward:1000, type:'combo_count', combo:'bj21', target:5 },
+  { id:'bj21x20',   name:'🃏 퍼펙트 20번',   desc:'블랙잭 21 20번 달성',        reward:4000, type:'combo_count', combo:'bj21', target:20 },
+  { id:'bjbust',    name:'💥 첫 버스트',      desc:'블랙잭에서 버스트 1번',      reward:50,   type:'combo', combo:'bjbust', target:1 },
+  { id:'bjbustx10', name:'💥 버스트 10번',    desc:'블랙잭에서 버스트 10번',     reward:200,  type:'combo_count', combo:'bjbust', target:10 },
+  { id:'bjbustx50', name:'💥 버스트 50번',    desc:'블랙잭에서 버스트 50번',     reward:800,  type:'combo_count', combo:'bjbust', target:50 },
+  { id:'bjdouble',  name:'✌️ 첫 더블다운',   desc:'블랙잭에서 더블다운 1번',    reward:80,   type:'combo', combo:'bjdouble', target:1 },
+  { id:'bjdoublex10',name:'✌️ 더블다운 10번',desc:'블랙잭에서 더블다운 10번',   reward:300,  type:'combo_count', combo:'bjdouble', target:10 },
+  { id:'bjdealerbust',name:'😈 딜러 버스트',  desc:'딜러가 버스트 1번',          reward:100,  type:'combo', combo:'bjdealerbust', target:1 },
+  { id:'bjdealerbustx10',name:'😈 딜러 10번 버스트',desc:'딜러가 버스트 10번', reward:400,  type:'combo_count', combo:'bjdealerbust', target:10 },
+
+  // ── 주사위 특수 조합 ───────────────────────────────
+  { id:'dice66',    name:'🎲 더블 식스',      desc:'주사위 6-6 나오기',          reward:250,  type:'combo', combo:'dice66',  target:1 },
+  { id:'dice66x3',  name:'🎲 더블 식스 3번',  desc:'주사위 6-6 3번',             reward:800,  type:'combo_count', combo:'dice66',  target:3 },
+  { id:'dice66x10', name:'🎲 더블 식스 10번', desc:'주사위 6-6 10번',            reward:3000, type:'combo_count', combo:'dice66',  target:10 },
+  { id:'dice11',    name:'🎲 더블 원',        desc:'주사위 1-1 나오기',          reward:200,  type:'combo', combo:'dice11',  target:1 },
+  { id:'dice11x5',  name:'🎲 더블 원 5번',    desc:'주사위 1-1 5번',             reward:800,  type:'combo_count', combo:'dice11',  target:5 },
+  { id:'dice22',    name:'🎲 더블 투',        desc:'주사위 2-2 나오기',          reward:180,  type:'combo', combo:'dice22',  target:1 },
+  { id:'dice33',    name:'🎲 더블 쓰리',      desc:'주사위 3-3 나오기',          reward:180,  type:'combo', combo:'dice33',  target:1 },
+  { id:'dice44',    name:'🎲 더블 포',        desc:'주사위 4-4 나오기',          reward:180,  type:'combo', combo:'dice44',  target:1 },
+  { id:'dice55',    name:'🎲 더블 파이브',    desc:'주사위 5-5 나오기',          reward:200,  type:'combo', combo:'dice55',  target:1 },
+  { id:'dicealldbls',name:'🎲 모든 더블',     desc:'더블 1~6 전부 달성',         reward:3000, type:'all_doubles', target:6 },
+  { id:'dice7',     name:'🎲 럭키 세븐',      desc:'주사위 합계 7 나오기',       reward:150,  type:'combo', combo:'dicesum7', target:1 },
+  { id:'dice7x5',   name:'🎲 럭키 7 x5',      desc:'주사위 합계 7 5번',          reward:600,  type:'combo_count', combo:'dicesum7', target:5 },
+  { id:'dice7x20',  name:'🎲 럭키 7 x20',     desc:'주사위 합계 7 20번',         reward:2500, type:'combo_count', combo:'dicesum7', target:20 },
+  { id:'dice12',    name:'🎲 더블 맥스',      desc:'주사위 합계 12 나오기',      reward:200,  type:'combo', combo:'dicesum12', target:1 },
+  { id:'dice2',     name:'🎲 스네이크 아이',  desc:'주사위 합계 2 나오기',       reward:200,  type:'combo', combo:'dicesum2',  target:1 },
+
+  // ── 룰렛 특수 조합 ─────────────────────────────────
+  { id:'r0',        name:'🟢 제로 히트',      desc:'룰렛에서 0 나오기',          reward:500,  type:'combo', combo:'roul0',   target:1 },
+  { id:'r0x3',      name:'🟢 제로 3번',       desc:'룰렛에서 0 3번 나오기',      reward:2000, type:'combo_count', combo:'roul0', target:3 },
+  { id:'rnum1',     name:'🎡 번호 1 히트',    desc:'룰렛에서 1번 나오기',        reward:200,  type:'combo', combo:'roul1',   target:1 },
+  { id:'rnum7',     name:'🎡 행운의 7',       desc:'룰렛에서 7번 나오기',        reward:200,  type:'combo', combo:'roul7',   target:1 },
+  { id:'rnum13',    name:'🎡 불운의 13',      desc:'룰렛에서 13번 나오기',       reward:300,  type:'combo', combo:'roul13',  target:1 },
+  { id:'rnum36',    name:'🎡 최고 번호',      desc:'룰렛에서 36번 나오기',       reward:200,  type:'combo', combo:'roul36',  target:1 },
+  { id:'rred5',     name:'🔴 레드 5연',       desc:'룰렛 레드 5번 연속',         reward:500,  type:'roul_streak', color:'red',   target:5 },
+  { id:'rblk5',     name:'⚫ 블랙 5연',       desc:'룰렛 블랙 5번 연속',         reward:500,  type:'roul_streak', color:'black', target:5 },
+  { id:'rred10',    name:'🔴 레드 10연',      desc:'룰렛 레드 10번 연속',        reward:2000, type:'roul_streak', color:'red',   target:10 },
+  { id:'rblk10',    name:'⚫ 블랙 10연',      desc:'룰렛 블랙 10번 연속',        reward:2000, type:'roul_streak', color:'black', target:10 },
+
+  // ── 코인 관련 ──────────────────────────────────────
+  { id:'c2k',    name:'💰 코인 2천',      desc:'보유 코인 2,000 달성',     reward:100,   type:'coins', target:2000 },
+  { id:'c5k',    name:'💰 코인 5천',      desc:'보유 코인 5,000 달성',     reward:200,   type:'coins', target:5000 },
+  { id:'c10k',   name:'💰 코인 만',       desc:'보유 코인 10,000 달성',    reward:500,   type:'coins', target:10000 },
+  { id:'c25k',   name:'💎 코인 2.5만',    desc:'보유 코인 25,000 달성',    reward:1000,  type:'coins', target:25000 },
+  { id:'c50k',   name:'💎 코인 5만',      desc:'보유 코인 50,000 달성',    reward:2500,  type:'coins', target:50000 },
+  { id:'c100k',  name:'👑 코인 10만',     desc:'보유 코인 100,000 달성',   reward:6000,  type:'coins', target:100000 },
+  { id:'c500k',  name:'🌌 코인 50만',     desc:'보유 코인 500,000 달성',   reward:30000, type:'coins', target:500000 },
+  { id:'c1m',    name:'🌠 백만장자',      desc:'보유 코인 1,000,000 달성', reward:80000, type:'coins', target:1000000 },
+
+  // ── 누적 획득 코인 ─────────────────────────────────
+  { id:'earn500',    name:'📈 첫 수익',       desc:'누적 획득 코인 500',         reward:50,    type:'earned', target:500 },
+  { id:'earn1000',   name:'📈 1천 획득',      desc:'누적 획득 코인 1,000',       reward:100,   type:'earned', target:1000 },
+  { id:'earn5000',   name:'📈 5천 획득',      desc:'누적 획득 코인 5,000',       reward:300,   type:'earned', target:5000 },
+  { id:'earn10000',  name:'📈 만 획득',       desc:'누적 획득 코인 10,000',      reward:600,   type:'earned', target:10000 },
+  { id:'earn50000',  name:'📈 5만 획득',      desc:'누적 획득 코인 50,000',      reward:2500,  type:'earned', target:50000 },
+  { id:'earn100000', name:'📈 10만 획득',     desc:'누적 획득 코인 100,000',     reward:6000,  type:'earned', target:100000 },
+  { id:'earn500000', name:'📈 50만 획득',     desc:'누적 획득 코인 500,000',     reward:25000, type:'earned', target:500000 },
+
+  // ── 한 판 큰 수익 ──────────────────────────────────
+  { id:'big100',   name:'💥 한 방 100',      desc:'한 판에 100 이상 획득',      reward:100,   type:'bigwin', target:100 },
+  { id:'big500',   name:'💥 한 방 500',      desc:'한 판에 500 이상 획득',      reward:300,   type:'bigwin', target:500 },
+  { id:'big1000',  name:'💥 한 방 1천',      desc:'한 판에 1,000 이상 획득',    reward:600,   type:'bigwin', target:1000 },
+  { id:'big5000',  name:'💥 한 방 5천',      desc:'한 판에 5,000 이상 획득',    reward:2000,  type:'bigwin', target:5000 },
+  { id:'big10000', name:'💥 한 방 1만',      desc:'한 판에 10,000 이상 획득',   reward:5000,  type:'bigwin', target:10000 },
+  { id:'big50000', name:'💥 한 방 5만',      desc:'한 판에 50,000 이상 획득',   reward:20000, type:'bigwin', target:50000 },
+
+  // ── 파산 & 부활 ────────────────────────────────────
+  { id:'broke1',   name:'💸 첫 파산',        desc:'코인이 0이 되기',            reward:200,   type:'broke', target:1 },
+  { id:'broke3',   name:'💸 3번 파산',       desc:'코인이 0이 되기 3번',        reward:500,   type:'broke', target:3 },
+  { id:'broke10',  name:'💸 10번 파산',      desc:'코인이 0이 되기 10번',       reward:1500,  type:'broke', target:10 },
+  { id:'low10',    name:'😰 아슬아슬',       desc:'코인 10개 이하에서 생존',    reward:300,   type:'combo', combo:'low10', target:1 },
+  { id:'low10x5',  name:'😰 아슬아슬 5번',   desc:'코인 10개 이하에서 5번 생존',reward:1000,  type:'combo_count', combo:'low10', target:5 },
+
+  // ── 특수 도전 ──────────────────────────────────────
+  { id:'allgames',  name:'🌍 모든 게임',      desc:'4가지 게임 각 1번씩 플레이', reward:200,   type:'all_games', target:4 },
+  { id:'allgames5', name:'🌍 모든 게임 5번',  desc:'4가지 게임 각 5번씩 플레이', reward:600,   type:'all_games5', target:20 },
+  { id:'maxbet_s',  name:'🔝 슬롯 맥스벳',   desc:'슬롯에서 100 베팅',          reward:150,   type:'combo', combo:'maxbet_slots', target:1 },
+  { id:'maxbet_b',  name:'🔝 블랙잭 맥스벳', desc:'블랙잭에서 500 베팅',        reward:200,   type:'combo', combo:'maxbet_bj', target:1 },
+  { id:'earlybird', name:'🌅 얼리버드',      desc:'게임 시작 후 1분 안에 10번 플레이', reward:300, type:'combo', combo:'earlybird', target:1 },
+  { id:'noloss10',  name:'🛡 무손실 10연',   desc:'10판 연속 잃지 않기 (타이 포함)', reward:400, type:'noloss', target:10 },
+  { id:'noloss20',  name:'🛡 무손실 20연',   desc:'20판 연속 잃지 않기',        reward:1000,  type:'noloss', target:20 },
+  { id:'noloss50',  name:'🛡 무손실 50연',   desc:'50판 연속 잃지 않기',        reward:5000,  type:'noloss', target:50 },
+
+  // ── 주사위 합계 수집 ───────────────────────────────
+  { id:'dsum3',  name:'🎲 합 3',   desc:'주사위 합계 3 나오기',   reward:120, type:'combo', combo:'dicesum3',  target:1 },
+  { id:'dsum4',  name:'🎲 합 4',   desc:'주사위 합계 4 나오기',   reward:100, type:'combo', combo:'dicesum4',  target:1 },
+  { id:'dsum5',  name:'🎲 합 5',   desc:'주사위 합계 5 나오기',   reward:80,  type:'combo', combo:'dicesum5',  target:1 },
+  { id:'dsum6',  name:'🎲 합 6',   desc:'주사위 합계 6 나오기',   reward:80,  type:'combo', combo:'dicesum6',  target:1 },
+  { id:'dsum8',  name:'🎲 합 8',   desc:'주사위 합계 8 나오기',   reward:80,  type:'combo', combo:'dicesum8',  target:1 },
+  { id:'dsum9',  name:'🎲 합 9',   desc:'주사위 합계 9 나오기',   reward:80,  type:'combo', combo:'dicesum9',  target:1 },
+  { id:'dsum10', name:'🎲 합 10',  desc:'주사위 합계 10 나오기',  reward:100, type:'combo', combo:'dicesum10', target:1 },
+  { id:'dsum11', name:'🎲 합 11',  desc:'주사위 합계 11 나오기',  reward:120, type:'combo', combo:'dicesum11', target:1 },
+  { id:'dsumall',name:'🎲 합 컬렉터',desc:'주사위 합계 2~12 전부 달성', reward:3000, type:'all_sums', target:11 },
+
+  // ── 룰렛 번호 컬렉터 ───────────────────────────────
+  { id:'rcol110',  name:'🎡 번호 1~10',   desc:'룰렛 1~10번 모두 나오기',     reward:1000, type:'roul_numbers', target:10, range:[1,10] },
+  { id:'rcol1120', name:'🎡 번호 11~20',  desc:'룰렛 11~20번 모두 나오기',    reward:1000, type:'roul_numbers', target:10, range:[11,20] },
+  { id:'rcol2130', name:'🎡 번호 21~30',  desc:'룰렛 21~30번 모두 나오기',    reward:1000, type:'roul_numbers', target:10, range:[21,30] },
+  { id:'rcol3136', name:'🎡 번호 31~36',  desc:'룰렛 31~36번 모두 나오기',    reward:700,  type:'roul_numbers', target:6,  range:[31,36] },
+  { id:'rcol0136', name:'🎡 모든 번호',   desc:'룰렛 0~36 전부 나오기',       reward:10000,type:'roul_numbers', target:37, range:[0,36] },
+
+  // ── 슬롯 + 블랙잭 조합 챌린지 ─────────────────────
+  { id:'slotwin10',  name:'🎰 슬롯 10연승', desc:'슬롯에서만 10번 연속 이기기', reward:1500, type:'game_streak', game:'slots', target:10 },
+  { id:'bjwin10',    name:'🃏 블랙잭 10연승',desc:'블랙잭에서만 10번 연속 이기기',reward:2000,type:'game_streak', game:'blackjack', target:10 },
+  { id:'dicewin10',  name:'🎲 주사위 10연승',desc:'주사위에서만 10번 연속 이기기',reward:1500,type:'game_streak', game:'dice', target:10 },
+  { id:'roulwin5',   name:'🎡 룰렛 5연승',  desc:'룰렛에서만 5번 연속 이기기',  reward:1000, type:'game_streak', game:'roulette', target:5 },
+  { id:'roulwin10',  name:'🎡 룰렛 10연승', desc:'룰렛에서만 10번 연속 이기기', reward:3000, type:'game_streak', game:'roulette', target:10 },
+
+  // ── 마일스톤 ───────────────────────────────────────
+  { id:'ms_first',   name:'🎊 첫 게임',     desc:'처음으로 게임 플레이',        reward:20,    type:'play', game:'any', target:1 },
+  { id:'ms_100g',    name:'🎂 100게임',      desc:'총 100게임 플레이',           reward:500,   type:'play', game:'any', target:100 },
+  { id:'ms_500g',    name:'🎂 500게임',      desc:'총 500게임 플레이',           reward:2500,  type:'play', game:'any', target:500 },
+  { id:'ms_1000g',   name:'🎂 1000게임',     desc:'총 1000게임 플레이',          reward:8000,  type:'play', game:'any', target:1000 },
+  { id:'ms_5000g',   name:'🎂 5000게임',     desc:'총 5000게임 플레이',          reward:40000, type:'play', game:'any', target:5000 },
+  { id:'ms_reset1',  name:'↺ 리셋 1번',     desc:'리셋 버튼 1번 누르기',        reward:50,    type:'reset', target:1 },
+  { id:'ms_reset5',  name:'↺ 리셋 5번',     desc:'리셋 버튼 5번 누르기',        reward:200,   type:'reset', target:5 },
+  { id:'ms_reset10', name:'↺ 리셋 10번',    desc:'리셋 버튼 10번 누르기',       reward:500,   type:'reset', target:10 },
+
+  // ── 한 판에 큰 배율 슬롯 ──────────────────────────
+  { id:'slot50x',    name:'🚀 50배 슬롯',    desc:'슬롯 7️⃣ 잭팟으로 50배 획득', reward:800,  type:'combo', combo:'slot50x',  target:1 },
+  { id:'slot20x',    name:'🚀 20배 슬롯',    desc:'슬롯 💎 잭팟으로 20배 획득', reward:400,  type:'combo', combo:'slot20x',  target:1 },
+  { id:'slot10x',    name:'🚀 10배 슬롯',    desc:'슬롯 ⭐ 잭팟으로 10배 획득', reward:250,  type:'combo', combo:'slot10x',  target:1 },
+
+  // ── 블랙잭 점수 수집 ───────────────────────────────
+  { id:'bj20',       name:'🃏 블랙잭 20점',  desc:'블랙잭에서 정확히 20점',     reward:150,  type:'combo', combo:'bj20',  target:1 },
+  { id:'bj20x5',     name:'🃏 20점 5번',     desc:'블랙잭에서 20점 5번',        reward:500,  type:'combo_count', combo:'bj20', target:5 },
+  { id:'bj19',       name:'🃏 블랙잭 19점',  desc:'블랙잭에서 정확히 19점',     reward:100,  type:'combo', combo:'bj19',  target:1 },
+  { id:'bj18',       name:'🃏 블랙잭 18점',  desc:'블랙잭에서 정확히 18점',     reward:80,   type:'combo', combo:'bj18',  target:1 },
+  { id:'bj17',       name:'🃏 블랙잭 17점',  desc:'블랙잭에서 정확히 17점',     reward:80,   type:'combo', combo:'bj17',  target:1 },
+  { id:'bjpush',     name:'🤝 첫 타이',      desc:'블랙잭에서 타이 1번',        reward:80,   type:'combo', combo:'bjpush', target:1 },
+  { id:'bjpushx5',   name:'🤝 타이 5번',     desc:'블랙잭에서 타이 5번',        reward:300,  type:'combo_count', combo:'bjpush', target:5 },
+
+  // ── 주사위 베팅 타입 수집 ──────────────────────────
+  { id:'dhiwin',   name:'🎲 HI 첫 승리',   desc:'주사위 HI 베팅으로 이기기',   reward:80,   type:'combo', combo:'dice_hi_win',  target:1 },
+  { id:'dlowin',   name:'🎲 LO 첫 승리',   desc:'주사위 LO 베팅으로 이기기',   reward:80,   type:'combo', combo:'dice_lo_win',  target:1 },
+  { id:'d7win',    name:'🎲 7 첫 승리',    desc:'주사위 LUCKY7 베팅으로 이기기',reward:100, type:'combo', combo:'dice_7_win',   target:1 },
+  { id:'devenwin', name:'🎲 짝수 첫 승리', desc:'주사위 EVEN 베팅으로 이기기', reward:60,   type:'combo', combo:'dice_even_win',target:1 },
+  { id:'doddwin',  name:'🎲 홀수 첫 승리', desc:'주사위 ODD 베팅으로 이기기',  reward:60,   type:'combo', combo:'dice_odd_win', target:1 },
+  { id:'ddblwin',  name:'🎲 더블 첫 승리', desc:'주사위 DOUBLE 베팅으로 이기기',reward:120, type:'combo', combo:'dice_dbl_win', target:1 },
+  { id:'dalltypes',name:'🎲 모든 베팅 타입',desc:'주사위 6가지 베팅 모두 승리', reward:500, type:'all_dice_types', target:6 },
+
+  // ── 플래피버드 ──────────────────────────────────────
+  { id:'flappy_first',   name:'🐦 첫 비행',       desc:'플래피버드 파이프 1개 통과',     reward:30,   type:'combo',       combo:'flappy1',    target:1 },
+  { id:'flappy5',        name:'🐦 5점 달성',       desc:'플래피버드 5점 달성',            reward:80,   type:'combo',       combo:'flappy5',    target:1 },
+  { id:'flappy10',       name:'🐦 10점 달성',      desc:'플래피버드 10점 달성',           reward:200,  type:'combo',       combo:'flappy10',   target:1 },
+  { id:'flappy20',       name:'🐦 20점 달성',      desc:'플래피버드 20점 달성',           reward:600,  type:'combo',       combo:'flappy20',   target:1 },
+  { id:'flappy50',       name:'🐦 50점 달성',      desc:'플래피버드 50점 달성',           reward:2000, type:'combo',       combo:'flappy50',   target:1 },
+  { id:'flappy_pipe10',  name:'🐦 파이프 10개',    desc:'플래피버드 파이프 총 10개 통과', reward:50,   type:'combo_count', combo:'flappy_pipe',target:10 },
+  { id:'flappy_pipe50',  name:'🐦 파이프 50개',    desc:'플래피버드 파이프 총 50개 통과', reward:200,  type:'combo_count', combo:'flappy_pipe',target:50 },
+  { id:'flappy_pipe100', name:'🐦 파이프 100개',   desc:'플래피버드 파이프 총 100개',     reward:500,  type:'combo_count', combo:'flappy_pipe',target:100 },
+  { id:'flappy_pipe500', name:'🐦 파이프 500개',   desc:'플래피버드 파이프 총 500개',     reward:3000, type:'combo_count', combo:'flappy_pipe',target:500 },
+  { id:'flappy_die10',   name:'💀 10번 추락',      desc:'플래피버드 10번 죽기',           reward:100,  type:'combo_count', combo:'flappy_die', target:10 },
+  { id:'flappy_die50',   name:'💀 50번 추락',      desc:'플래피버드 50번 죽기',           reward:400,  type:'combo_count', combo:'flappy_die', target:50 },
+];
+
+// progress state
+let missionState = {};
+MISSIONS.forEach(m => {
+  missionState[m.id] = { progress: 0, claimed: false };
+});
+
+// tracking vars
+let winStreak = 0;
+let nolossStreak = 0;
+let gameWinStreak = { slots:0, blackjack:0, roulette:0, dice:0 };
+let roulColorStreak = { red:0, black:0 };
+let playCount = { slots:0, blackjack:0, roulette:0, dice:0 };
+let totalBetted = 0;
+let totalWinsCount = 0;
+let totalLossesCount = 0;
+let totalEarned = 0;
+let brokeCount = 0;
+let resetCount = 0;
+let comboCounts = {};   // combo_count tracking: {comboId: count}
+let roulHit = new Set(); // roulette numbers hit
+let diceDoubles = new Set(); // which doubles hit
+let diceSums = new Set();    // which sums hit
+let slotCombosHit = new Set();
+let allGamesPlayed = new Set();
+let allGames5 = { slots:0, blackjack:0, roulette:0, dice:0 };
+let allDiceTypesWon = new Set();
+let bigwinReached = {};
+let sessionStart = Date.now();
+let earlyBirdDone = false;
+
+function trackMission(event, data={}) {
+  let updated = false;
+  const upd = () => { updated = true; };
+
+  // ── win streak ──
+  if (event === 'win') {
+    winStreak++;
+    nolossStreak++;
+    totalWinsCount++;
+    MISSIONS.filter(m=>m.type==='streak').forEach(m => {
+      const s = missionState[m.id]; if(s.claimed) return;
+      s.progress = Math.min(winStreak, m.target); upd();
+    });
+    MISSIONS.filter(m=>m.type==='wins_total').forEach(m => {
+      const s = missionState[m.id]; if(s.claimed) return;
+      s.progress = Math.min(totalWinsCount, m.target); upd();
+    });
+    MISSIONS.filter(m=>m.type==='noloss').forEach(m => {
+      const s = missionState[m.id]; if(s.claimed) return;
+      s.progress = Math.min(nolossStreak, m.target); upd();
+    });
+  }
+  if (event === 'lose') {
+    winStreak = 0; nolossStreak = 0;
+    totalLossesCount++;
+    MISSIONS.filter(m=>m.type==='streak').forEach(m => {
+      const s = missionState[m.id]; if(s.claimed) return;
+      s.progress = 0; upd();
+    });
+    MISSIONS.filter(m=>m.type==='noloss').forEach(m => {
+      const s = missionState[m.id]; if(s.claimed) return;
+      s.progress = 0; upd();
+    });
+    MISSIONS.filter(m=>m.type==='losses_total').forEach(m => {
+      const s = missionState[m.id]; if(s.claimed) return;
+      s.progress = Math.min(totalLossesCount, m.target); upd();
+    });
+  }
+  if (event === 'push') {
+    nolossStreak++;
+    MISSIONS.filter(m=>m.type==='noloss').forEach(m => {
+      const s = missionState[m.id]; if(s.claimed) return;
+      s.progress = Math.min(nolossStreak, m.target); upd();
+    });
+  }
+
+  // ── game streak ──
+  if (event === 'game_result') {
+    const g = data.game, won = data.won;
+    if (won) { gameWinStreak[g]++; } else { gameWinStreak[g] = 0; }
+    MISSIONS.filter(m=>m.type==='game_streak' && m.game===g).forEach(m => {
+      const s = missionState[m.id]; if(s.claimed) return;
+      s.progress = Math.min(gameWinStreak[g], m.target); upd();
+    });
+  }
+
+  // ── play ──
+  if (event === 'play') {
+    const g = data.game;
+    playCount[g]++;
+    allGamesPlayed.add(g);
+    allGames5[g]++;
+    // earlybird
+    if (!earlyBirdDone && Object.values(playCount).reduce((a,b)=>a+b,0) >= 10 && (Date.now()-sessionStart) < 60000) {
+      trackMission('combo', {combo:'earlybird'}); earlyBirdDone = true;
+    }
+    MISSIONS.filter(m=>m.type==='play').forEach(m => {
+      const s = missionState[m.id]; if(s.claimed) return;
+      if (m.game === 'any') s.progress = Math.min(Object.values(playCount).reduce((a,b)=>a+b,0), m.target);
+      else if (m.game === g) s.progress = Math.min(playCount[g], m.target);
+      upd();
+    });
+    // all_games
+    MISSIONS.filter(m=>m.type==='all_games').forEach(m => {
+      const s = missionState[m.id]; if(s.claimed) return;
+      s.progress = Math.min(allGamesPlayed.size, m.target); upd();
+    });
+    MISSIONS.filter(m=>m.type==='all_games5').forEach(m => {
+      const s = missionState[m.id]; if(s.claimed) return;
+      s.progress = Math.min(Object.values(allGames5).reduce((a,b)=>a+b,0), m.target); upd();
+    });
+  }
+
+  // ── bet ──
+  if (event === 'bet') {
+    totalBetted += data.amount;
+    MISSIONS.filter(m=>m.type==='bet').forEach(m => {
+      const s = missionState[m.id]; if(s.claimed) return;
+      s.progress = Math.min(totalBetted, m.target); upd();
+    });
+    // maxbet detection
+    if (data.game==='slots' && data.amount>=100) trackMission('combo', {combo:'maxbet_slots'});
+    if (data.game==='blackjack' && data.amount>=500) trackMission('combo', {combo:'maxbet_bj'});
+  }
+
+  // ── earned ──
+  if (event === 'earned') {
+    totalEarned += data.amount;
+    MISSIONS.filter(m=>m.type==='earned').forEach(m => {
+      const s = missionState[m.id]; if(s.claimed) return;
+      s.progress = Math.min(totalEarned, m.target); upd();
+    });
+    // bigwin
+    MISSIONS.filter(m=>m.type==='bigwin').forEach(m => {
+      if(missionState[m.id].claimed || bigwinReached[m.id]) return;
+      if(data.amount >= m.target) { bigwinReached[m.id]=true; missionState[m.id].progress=m.target; upd(); }
+    });
+  }
+
+  // ── coins ──
+  if (event === 'coins_check') {
+    MISSIONS.filter(m=>m.type==='coins').forEach(m => {
+      const s = missionState[m.id]; if(s.claimed) return;
+      if(coins >= m.target) { s.progress = m.target; upd(); }
+    });
+    // broke
+    if (coins <= 0) {
+      brokeCount++;
+      MISSIONS.filter(m=>m.type==='broke').forEach(m => {
+        const s = missionState[m.id]; if(s.claimed) return;
+        s.progress = Math.min(brokeCount, m.target); upd();
+      });
+    }
+    // low10
+    if (coins > 0 && coins <= 10) trackMission('combo', {combo:'low10'});
+  }
+
+  // ── reset ──
+  if (event === 'reset_btn') {
+    resetCount++;
+    MISSIONS.filter(m=>m.type==='reset').forEach(m => {
+      const s = missionState[m.id]; if(s.claimed) return;
+      s.progress = Math.min(resetCount, m.target); upd();
+    });
+  }
+
+  // ── combo (once) ──
+  if (event === 'combo') {
+    const c = data.combo;
+    MISSIONS.filter(m=>m.type==='combo' && m.combo===c).forEach(m => {
+      const s = missionState[m.id]; if(s.claimed || s.progress>=1) return;
+      s.progress = 1; upd();
+    });
+    // combo_count
+    comboCounts[c] = (comboCounts[c]||0) + 1;
+    MISSIONS.filter(m=>m.type==='combo_count' && m.combo===c).forEach(m => {
+      const s = missionState[m.id]; if(s.claimed) return;
+      s.progress = Math.min(comboCounts[c], m.target); upd();
+    });
+    // roulette number collection
+    if (c.startsWith('roul') && c!=='roul0') {
+      const n = parseInt(c.replace('roul',''));
+      if (!isNaN(n)) {
+        roulHit.add(n);
+        MISSIONS.filter(m=>m.type==='roul_numbers').forEach(m => {
+          const s = missionState[m.id]; if(s.claimed) return;
+          const [lo,hi] = m.range;
+          let cnt = 0;
+          for(let i=lo;i<=hi;i++) if(roulHit.has(i)) cnt++;
+          s.progress = Math.min(cnt, m.target); upd();
+        });
+      }
+    }
+    if (c==='roul0') {
+      roulHit.add(0);
+      MISSIONS.filter(m=>m.type==='roul_numbers').forEach(m => {
+        const s = missionState[m.id]; if(s.claimed) return;
+        const [lo,hi] = m.range;
+        let cnt=0; for(let i=lo;i<=hi;i++) if(roulHit.has(i)) cnt++;
+        s.progress = Math.min(cnt, m.target); upd();
+      });
+    }
+    // dice doubles collection
+    const dblMap = {'dice11':1,'dice22':2,'dice33':3,'dice44':4,'dice55':5,'dice66':6};
+    if (dblMap[c]) {
+      diceDoubles.add(dblMap[c]);
+      MISSIONS.filter(m=>m.type==='all_doubles').forEach(m => {
+        const s = missionState[m.id]; if(s.claimed) return;
+        s.progress = Math.min(diceDoubles.size, m.target); upd();
+      });
+    }
+    // dice sums collection
+    const sumMap = {'dicesum2':2,'dicesum3':3,'dicesum4':4,'dicesum5':5,'dicesum6':6,'dicesum7':7,'dicesum8':8,'dicesum9':9,'dicesum10':10,'dicesum11':11,'dicesum12':12};
+    if (sumMap[c] !== undefined) {
+      diceSums.add(sumMap[c]);
+      MISSIONS.filter(m=>m.type==='all_sums').forEach(m => {
+        const s = missionState[m.id]; if(s.claimed) return;
+        s.progress = Math.min(diceSums.size, m.target); upd();
+      });
+    }
+    // slot combos
+    const slotMap = {'cherry':'slotCHER','lemon':'slotLEM','grape':'slotGRP','orange':'slotORG','star':'slotSTAR','diamond':'slotDIA','777':'slot777'};
+    if (slotMap[c]) {
+      slotCombosHit.add(c);
+      MISSIONS.filter(m=>m.type==='all_slots').forEach(m => {
+        const s = missionState[m.id]; if(s.claimed) return;
+        s.progress = Math.min(slotCombosHit.size, m.target); upd();
+      });
+    }
+    // dice betting type wins
+    const diceBetWins = ['dice_hi_win','dice_lo_win','dice_7_win','dice_even_win','dice_odd_win','dice_dbl_win'];
+    if (diceBetWins.includes(c)) {
+      allDiceTypesWon.add(c);
+      MISSIONS.filter(m=>m.type==='all_dice_types').forEach(m => {
+        const s = missionState[m.id]; if(s.claimed) return;
+        s.progress = Math.min(allDiceTypesWon.size, m.target); upd();
+      });
+    }
+  }
+
+  // ── roulette color streak ──
+  if (event === 'roul_color') {
+    const col = data.color;
+    ['red','black'].forEach(c => {
+      if (c===col) roulColorStreak[c]++;
+      else roulColorStreak[c] = 0;
+    });
+    MISSIONS.filter(m=>m.type==='roul_streak').forEach(m => {
+      const s = missionState[m.id]; if(s.claimed) return;
+      s.progress = Math.min(roulColorStreak[m.color]||0, m.target); upd();
+    });
+  }
+
+  if (updated) renderMissions();
+  checkMissionNotify();
+  if (updated) saveState();
+}
+
+function claimMission(id) {
+  const m = MISSIONS.find(x=>x.id===id);
+  const s = missionState[id];
+  if (!m || s.claimed || s.progress < m.target) return;
+  s.claimed = true;
+  coins += m.reward;
+  updateHUD();
+  popCoins(window.innerWidth/2, 300, true);
+
+  // flash + log
+  const card = document.getElementById('mc-'+id);
+  if (card) { card.classList.add('flash'); setTimeout(()=>card.classList.remove('flash'),600); }
+
+  const done = document.getElementById('mission-done-list');
+  const d = document.createElement('div');
+  d.className = 'h-win';
+  d.textContent = `✅ ${m.name} 완료! +${m.reward} 코인`;
+  done.prepend(d);
+
+  saveState();
+  renderMissions();
+  checkMissionNotify();
+
+  // toast
+  showMissionToast(m.name, m.reward);
+}
+
+function showMissionToast(name, reward) {
+  const t = document.createElement('div');
+  t.style.cssText = `position:fixed;bottom:30px;left:50%;transform:translateX(-50%);
+    background:#1c1c2a;border:3px solid var(--gold);padding:12px 20px;z-index:9998;
+    font-family:'Press Start 2P',monospace;font-size:8px;color:var(--gold);
+    text-shadow:0 0 8px var(--gold);box-shadow:4px 4px 0 #000;text-align:center;
+    animation:blink 0.4s step-end 3;white-space:nowrap;`;
+  t.textContent = `🏆 ${name} 완료! +${reward}`;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
+
+function renderMissions() {
+  const list = document.getElementById('mission-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  const active = MISSIONS.filter(m => !missionState[m.id].claimed);
+  const done   = MISSIONS.filter(m =>  missionState[m.id].claimed);
+
+  if (active.length === 0) {
+    list.innerHTML = '<div style="text-align:center;font-family:var(--vt);font-size:20px;color:var(--gold);padding:20px;">🏆 모든 미션 완료!</div>';
+    return;
+  }
+
+  // ── category definition ──
+  const CATEGORIES = [
+    { key:'ready',   label:'🔔 받을 수 있는 보상', color:'var(--gold)',  filter: m => !missionState[m.id].claimed && missionState[m.id].progress >= m.target },
+    { key:'streak',  label:'🔥 연속 승리',          color:'#ff6644',     filter: m => ['streak'].includes(m.type) },
+    { key:'wins',    label:'✅ 총 승리/패배',        color:'var(--green)',filter: m => ['wins_total','losses_total'].includes(m.type) },
+    { key:'play',    label:'🎮 플레이 횟수',         color:'var(--blue)', filter: m => m.type==='play' },
+    { key:'bet',     label:'💸 총 베팅액',           color:'#ff99aa',     filter: m => m.type==='bet' },
+    { key:'coins',   label:'💰 코인 보유/획득',      color:'var(--gold)', filter: m => ['coins','earned','bigwin'].includes(m.type) },
+    { key:'slots',   label:'🎰 슬롯머신',            color:'#ffcc44',     filter: m => m.id.startsWith('slot') },
+    { key:'bj',      label:'🃏 블랙잭',              color:'var(--cyan)', filter: m => m.id.startsWith('bj') },
+    { key:'dice',    label:'🎲 주사위',              color:'#ff88cc',     filter: m => m.id.startsWith('d') && !m.id.startsWith('dbtn') },
+    { key:'roul',    label:'🎡 룰렛',                color:'var(--red)',  filter: m => m.id.startsWith('r') },
+    { key:'flappy',  label:'🐦 플래피버드',          color:'#88ffaa',     filter: m => m.id.startsWith('flappy') || m.id.startsWith('flappy') },
+    { key:'special', label:'⭐ 특수 도전',           color:'var(--pink)', filter: m => ['noloss','game_streak','all_games','all_games5','reset','broke','all_slots','all_doubles','all_sums','all_dice_types','roul_streak','roul_numbers'].includes(m.type) },
+    { key:'ms',      label:'🎂 마일스톤',            color:'#aaaaff',     filter: m => m.id.startsWith('ms_') || m.id.startsWith('c') || m.id.startsWith('earn') || m.id.startsWith('big') || m.id.startsWith('low') || m.id.startsWith('broke') || m.id.startsWith('tw') || m.id.startsWith('tl') },
+  ];
+
+  const assigned = new Set();
+
+  // build card helper
+  function makeCard(m) {
+    const s = missionState[m.id];
+    const prog = s.progress || 0;
+    const tgt  = m.target   || 1;
+    const isReady = prog >= tgt;
+    const isCombo = (m.type==='combo');
+    const pct = isCombo
+      ? (prog > 0 ? 100 : 0)
+      : Math.min(100, Math.round(prog / tgt * 100));
+    const progressLabel = isCombo
+      ? (prog > 0 ? '달성!' : '미달성')
+      : `${prog} / ${tgt}`;
+
+    const card = document.createElement('div');
+    card.id = 'mc-' + m.id;
+    card.className = 'mission-card' + (isReady ? ' ready' : '');
+    card.innerHTML = `
+      <div class="mission-header">
+        <div class="mission-name">${m.name}</div>
+        <div class="mission-reward">+${m.reward} 💰</div>
+      </div>
+      <div class="mission-desc">${m.desc}</div>
+      <div class="mission-progress-bar">
+        <div class="mission-progress-fill ${isReady?'gold':''}" style="width:${pct}%"></div>
+      </div>
+      <div class="mission-progress-text">${progressLabel} (${pct}%)</div>
+      ${isReady ? `<button class="mission-claim-btn" onclick="claimMission('${m.id}')">▶ 보상 받기 +${m.reward}</button>` : ''}
+    `;
+    return card;
+  }
+
+  // render each category
+  CATEGORIES.forEach(cat => {
+    const catMissions = active.filter(m => !assigned.has(m.id) && cat.filter(m));
+    if (catMissions.length === 0) return;
+    catMissions.forEach(m => assigned.add(m.id));
+
+    // category header
+    const hdr = document.createElement('div');
+    hdr.style.cssText = `margin:18px 0 8px;padding:6px 12px;border-left:4px solid ${cat.color};
+      font-size:8px;color:${cat.color};letter-spacing:2px;background:rgba(0,0,0,0.3);
+      display:flex;justify-content:space-between;align-items:center;`;
+    const ready = catMissions.filter(m => (m.target||1) <= (missionState[m.id].progress||0)).length;
+    hdr.innerHTML = `<span>${cat.label}</span><span style="font-family:var(--vt);font-size:14px;color:var(--dim)">${catMissions.length}개 남음${ready>0?` <span style="color:var(--gold)">· ${ready}개 완료 가능</span>`:''}</span>`;
+
+    // collapsible toggle
+    const body = document.createElement('div');
+    body.style.cssText = 'display:block;';
+    // default collapse for non-ready categories that have no ready items
+    if (cat.key !== 'ready' && ready === 0) body.style.display = 'none';
+
+    hdr.style.cursor = 'pointer';
+    hdr.onclick = () => { body.style.display = body.style.display === 'none' ? 'block' : 'none'; };
+    const arrow = document.createElement('span');
+    arrow.style.cssText = 'font-size:10px;margin-left:8px;';
+    arrow.textContent = body.style.display === 'none' ? '▶' : '▼';
+    hdr.appendChild(arrow);
+    hdr.onclick = () => {
+      const open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : 'block';
+      arrow.textContent = open ? '▶' : '▼';
+    };
+
+    catMissions.forEach(m => body.appendChild(makeCard(m)));
+    list.appendChild(hdr);
+    list.appendChild(body);
+  });
+
+  // anything not categorised
+  const rest = active.filter(m => !assigned.has(m.id));
+  if (rest.length > 0) {
+    const hdr = document.createElement('div');
+    hdr.style.cssText = `margin:18px 0 8px;padding:6px 12px;border-left:4px solid var(--dim);font-size:8px;color:var(--dim);letter-spacing:2px;background:rgba(0,0,0,0.3);`;
+    hdr.textContent = '기타';
+    list.appendChild(hdr);
+    rest.forEach(m => list.appendChild(makeCard(m)));
+  }
+
+  if (done.length > 0) {
+    const h = document.createElement('div');
+    h.style.cssText = 'font-size:7px;color:var(--dim);text-align:center;margin-top:16px;letter-spacing:2px;padding:8px;border-top:1px solid var(--border);';
+    h.textContent = `✅ 완료된 미션: ${done.length} / ${MISSIONS.length}`;
+    list.appendChild(h);
+  }
+}
+
+function checkMissionNotify() {
+  const hasReady = MISSIONS.some(m => !missionState[m.id].claimed && missionState[m.id].progress >= m.target);
+  const tab = document.getElementById('mission-tab');
+  const existing = tab.querySelector('.notify-dot');
+  if (hasReady && !existing) {
+    const dot = document.createElement('span');
+    dot.className = 'notify-dot';
+    tab.appendChild(dot);
+  } else if (!hasReady && existing) {
+    existing.remove();
+  }
+}
+
+// ======== FLAPPY BIRD ========
+(function() {
+  const C = document.getElementById('flappy-canvas');
+  const ctx = C.getContext('2d');
+  const W = 400, H = 500;
+
+  // pixel font helpers
+  const BIRD_SIZE = 22;
+  const PIPE_W = 52;
+  const GAP = 130;
+  const GRAVITY = 0.38;
+  const JUMP = -7.2;
+  const PIPE_SPEED = 2.4;
+  const PIPE_INTERVAL = 130; // frames
+
+  let state = 'idle'; // idle | playing | dead
+  let bird, pipes, frame, score, earnedThisRound, bestScore;
+  bestScore = parseInt(localStorage.getItem('flappy_best') || '0');
+
+  function coinPerPipe(sc) {
+    if (sc < 5)  return 5;
+    if (sc < 10) return 10;
+    if (sc < 20) return 20;
+    if (sc < 50) return 40;
+    return 100;
+  }
+
+  function initGame() {
+    bird = { x:90, y:H/2, vy:0, dead:false, angle:0 };
+    pipes = [];
+    frame = 0;
+    score = 0;
+    earnedThisRound = 0;
+    updateFlappyHUD();
+  }
+
+  function updateFlappyHUD() {
+    document.getElementById('flappy-score').textContent = score;
+    document.getElementById('flappy-best').textContent = bestScore;
+    document.getElementById('flappy-earned').textContent = earnedThisRound;
+  }
+
+  function spawnPipe() {
+    const minTop = 60, maxTop = H - GAP - 60;
+    const top = Math.floor(Math.random() * (maxTop - minTop)) + minTop;
+    pipes.push({ x: W + PIPE_W, top, passed: false });
+  }
+
+  function jump() {
+    if (state === 'dead') { state = 'idle'; initGame(); draw(); return; }
+    if (state === 'idle') { state = 'playing'; loop(); }
+    bird.vy = JUMP;
+  }
+
+  // input
+  C.addEventListener('click', jump);
+  C.addEventListener('touchstart', e => { e.preventDefault(); jump(); }, {passive:false});
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space' && document.getElementById('sec-flappy').classList.contains('active')) {
+      e.preventDefault(); jump();
+    }
+  });
+
+  function update() {
+    frame++;
+    // bird physics
+    bird.vy += GRAVITY;
+    bird.y += bird.vy;
+    bird.angle = Math.max(-25, Math.min(70, bird.vy * 4));
+
+    // spawn pipes
+    if (frame % PIPE_INTERVAL === 0) spawnPipe();
+
+    // move pipes
+    for (let p of pipes) {
+      p.x -= PIPE_SPEED;
+      // score
+      if (!p.passed && p.x + PIPE_W < bird.x) {
+        p.passed = true;
+        score++;
+        const earned = coinPerPipe(score - 1);
+        earnedThisRound += earned;
+        coins += earned;
+        updateHUD();
+        saveState();
+        // mission tracking for flappy
+        trackMission('play', {game:'flappy'});
+        trackMission('earned', {amount: earned});
+        trackMission('coins_check');
+        trackMission('combo', {combo: 'flappy_pipe'});
+        if (score === 1)  trackMission('combo', {combo:'flappy1'});
+        if (score === 5)  trackMission('combo', {combo:'flappy5'});
+        if (score === 10) trackMission('combo', {combo:'flappy10'});
+        if (score === 20) trackMission('combo', {combo:'flappy20'});
+        if (score === 50) trackMission('combo', {combo:'flappy50'});
+        updateFlappyHUD();
+      }
+    }
+    pipes = pipes.filter(p => p.x > -PIPE_W - 10);
+
+    // collision: ceiling / floor
+    if (bird.y < 0 || bird.y + BIRD_SIZE > H) { die(); return; }
+
+    // collision: pipes
+    for (let p of pipes) {
+      const bx = bird.x + 3, bw = BIRD_SIZE - 6;
+      const by = bird.y + 3, bh = BIRD_SIZE - 6;
+      if (bx + bw > p.x && bx < p.x + PIPE_W) {
+        if (by < p.top || by + bh > p.top + GAP) { die(); return; }
+      }
+    }
+  }
+
+  function die() {
+    state = 'dead';
+    bird.dead = true;
+    if (score > bestScore) {
+      bestScore = score;
+      localStorage.setItem('flappy_best', bestScore);
+      updateFlappyHUD();
+    }
+    trackMission('combo', {combo:'flappy_die'});
+    draw();
+  }
+
+  // pixel-style drawing
+  function drawPixelRect(x, y, w, h, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(Math.round(x), Math.round(y), w, h);
+  }
+
+  function drawBird(bx, by, angle, dead) {
+    ctx.save();
+    ctx.translate(Math.round(bx + BIRD_SIZE/2), Math.round(by + BIRD_SIZE/2));
+    ctx.rotate(angle * Math.PI / 180);
+    // body
+    drawPixelRect(-10, -8, 20, 16, dead ? '#888' : '#f5c518');
+    // wing
+    drawPixelRect(-6, 2, 10, 6, dead ? '#666' : '#e0a800');
+    // eye
+    drawPixelRect(4, -6, 6, 6, '#fff');
+    drawPixelRect(6, -4, 3, 3, '#111');
+    // beak
+    drawPixelRect(8, -1, 6, 4, dead ? '#888' : '#ff8800');
+    // pixel border
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(-10, -8, 20, 16);
+    ctx.restore();
+  }
+
+  function drawPipe(p) {
+    const capH = 16, capW = PIPE_W + 8;
+    // top pipe
+    drawPixelRect(p.x, 0, PIPE_W, p.top, '#2ecc40');
+    drawPixelRect(p.x - 4, p.top - capH, capW, capH, '#27ae36');
+    // pixel lines
+    ctx.fillStyle = '#1a8a2a';
+    ctx.fillRect(p.x + 4, 0, 4, p.top);
+    // bottom pipe
+    const bot = p.top + GAP;
+    drawPixelRect(p.x, bot, PIPE_W, H - bot, '#2ecc40');
+    drawPixelRect(p.x - 4, bot, capW, capH, '#27ae36');
+    ctx.fillStyle = '#1a8a2a';
+    ctx.fillRect(p.x + 4, bot + capH, 4, H - bot - capH);
+    // border
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(p.x, 0, PIPE_W, p.top);
+    ctx.strokeRect(p.x - 4, p.top - capH, capW, capH);
+    ctx.strokeRect(p.x, bot, PIPE_W, H - bot);
+    ctx.strokeRect(p.x - 4, bot, capW, capH);
+  }
+
+  function drawBG() {
+    // sky gradient
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#0a0a1f');
+    grad.addColorStop(1, '#0f1a2e');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+    // stars
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    for (let i = 0; i < 30; i++) {
+      const sx = ((i * 137 + frame * 0.3) % W);
+      const sy = (i * 53) % (H * 0.6);
+      ctx.fillRect(Math.round(sx), Math.round(sy), 2, 2);
+    }
+    // ground
+    drawPixelRect(0, H - 20, W, 20, '#3a2a0a');
+    drawPixelRect(0, H - 24, W, 4, '#5a3a0a');
+    // ground pattern
+    ctx.fillStyle = '#4a3000';
+    for (let gx = (-frame * PIPE_SPEED * 0.5) % 40; gx < W; gx += 40) {
+      ctx.fillRect(Math.round(gx), H - 20, 20, 20);
+    }
+  }
+
+  function drawHUD_canvas() {
+    ctx.font = 'bold 22px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    // shadow
+    ctx.fillStyle = '#000';
+    ctx.fillText(score, W/2 + 2, 42);
+    ctx.fillStyle = '#f5c518';
+    ctx.fillText(score, W/2, 40);
+    ctx.font = '10px "Press Start 2P", monospace';
+    ctx.fillStyle = '#00fff0';
+    ctx.fillText('+' + coinPerPipe(score) + ' 💰/PIPE', W/2, 62);
+  }
+
+  function drawIdle() {
+    drawBG();
+    drawBird(bird.x, bird.y + Math.sin(frame * 0.06) * 5, 0, false);
+    ctx.font = '11px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#000'; ctx.fillText('CLICK / SPACE', W/2+2, H/2-28);
+    ctx.fillStyle = '#f5c518'; ctx.fillText('CLICK / SPACE', W/2, H/2-30);
+    ctx.fillStyle = '#000'; ctx.fillText('TO START', W/2+2, H/2-8);
+    ctx.fillStyle = '#00fff0'; ctx.fillText('TO START', W/2, H/2-10);
+    if (bestScore > 0) {
+      ctx.font = '8px "Press Start 2P", monospace';
+      ctx.fillStyle = '#aaa'; ctx.fillText('BEST: ' + bestScore, W/2, H/2+16);
+    }
+  }
+
+  function drawDead() {
+    drawBG();
+    for (let p of pipes) drawPipe(p);
+    drawBird(bird.x, bird.y, bird.angle, true);
+    // overlay
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.font = '13px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#e03030'; ctx.fillText('GAME OVER', W/2+2, H/2-40);
+    ctx.fillStyle = '#ff6666'; ctx.fillText('GAME OVER', W/2, H/2-42);
+    ctx.font = '9px "Press Start 2P", monospace';
+    ctx.fillStyle = '#f5c518'; ctx.fillText('SCORE: ' + score, W/2, H/2-14);
+    ctx.fillStyle = '#2ecc40'; ctx.fillText('+' + earnedThisRound + ' COINS EARNED!', W/2, H/2+8);
+    ctx.fillStyle = '#aaa'; ctx.fillText('BEST: ' + bestScore, W/2, H/2+30);
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.fillStyle = '#00fff0'; ctx.fillText('CLICK TO RETRY', W/2, H/2+56);
+  }
+
+  function draw() {
+    if (state === 'idle') { drawIdle(); return; }
+    if (state === 'dead') { drawDead(); return; }
+    drawBG();
+    for (let p of pipes) drawPipe(p);
+    drawBird(bird.x, bird.y, bird.angle, false);
+    drawHUD_canvas();
+  }
+
+  let raf;
+  function loop() {
+    if (state !== 'playing') return;
+    update();
+    draw();
+    raf = requestAnimationFrame(loop);
+  }
+
+  // idle animation
+  let idleRaf;
+  function idleLoop() {
+    if (state !== 'idle') return;
+    frame++;
+    drawIdle();
+    idleRaf = requestAnimationFrame(idleLoop);
+  }
+
+  function startIdleAnim() {
+    frame = 0;
+    idleLoop();
+  }
+
+  // pause when tab not visible
+  const origSwitch = switchTab;
+  window.switchTab = function(name) {
+    origSwitch.call(this, name);
+    cancelAnimationFrame(raf);
+    cancelAnimationFrame(idleRaf);
+    if (name === 'flappy') {
+      if (state === 'idle') startIdleAnim();
+      else if (state === 'playing') loop();
+    }
+  };
+
+  initGame();
+  // start idle when flappy tab is first shown
+  document.querySelector('[onclick="switchTab(\'flappy\')"]').addEventListener('click', () => {
+    if (state === 'idle') { cancelAnimationFrame(idleRaf); startIdleAnim(); }
+  });
+})();
+loadState();
+updateHUD();
+renderMissions();
+checkMissionNotify();
+</script>
+</body>
+</html>
