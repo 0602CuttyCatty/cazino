@@ -537,6 +537,49 @@
     border-top: 2px solid var(--border);
     margin: 16px 0;
   }
+
+  /* ===== SCRATCH CARD ===== */
+  .scratch-cell {
+    aspect-ratio: 1;
+    background: #1a1a2a;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    box-shadow: 2px 2px 0 #000;
+    transition: transform 0.15s;
+  }
+  .scratch-cell.covered {
+    background: repeating-linear-gradient(45deg,#2a2a3a,#2a2a3a 4px,#1e1e2e 4px,#1e1e2e 8px);
+    cursor: pointer;
+  }
+  .scratch-cell.covered:hover { transform: scale(1.06); }
+  .scratch-cell.match { border-color: var(--gold); box-shadow: 0 0 10px var(--gold)88, 2px 2px 0 #000; }
+
+  /* ===== COIN FLIP ===== */
+  @keyframes coin-flip-anim {
+    0%   { transform: rotateY(0deg) scale(1); }
+    25%  { transform: rotateY(90deg) scale(1.2); }
+    50%  { transform: rotateY(180deg) scale(1); }
+    75%  { transform: rotateY(270deg) scale(1.2); }
+    100% { transform: rotateY(360deg) scale(1); }
+  }
+  .flipping { animation: coin-flip-anim 0.2s linear infinite; display:inline-block; }
+
+  /* ===== RPS ===== */
+  @keyframes rps-shake {
+    0%,100% { transform: translateX(0) rotate(0); }
+    20%     { transform: translateX(-10px) rotate(-8deg); }
+    40%     { transform: translateX(10px) rotate(8deg); }
+    60%     { transform: translateX(-6px) rotate(-4deg); }
+    80%     { transform: translateX(6px) rotate(4deg); }
+  }
+  .rps-shaking { animation: rps-shake 0.35s ease; display:inline-block; }
+  @keyframes rps-reveal {
+    0%   { transform: scale(0) rotate(-20deg); opacity:0; }
+    70%  { transform: scale(1.25) rotate(5deg); opacity:1; }
+    100% { transform: scale(1) rotate(0); opacity:1; }
+  }
+  .rps-reveal { animation: rps-reveal 0.3s cubic-bezier(0.2,0.8,0.3,1) forwards; display:inline-block; }
 </style>
 </head>
 <body>
@@ -572,6 +615,9 @@
   <button class="tab" onclick="switchTab('blackjack')"><span class="tab-icon">🃏</span>BLACK<br>JACK</button>
   <button class="tab" onclick="switchTab('roulette')"><span class="tab-icon">🎡</span>ROUL<br>ETTE</button>
   <button class="tab" onclick="switchTab('dice')"><span class="tab-icon">🎲</span>DICE</button>
+  <button class="tab" onclick="switchTab('scratch')"><span class="tab-icon">🎟️</span>SCRA<br>TCH</button>
+  <button class="tab" onclick="switchTab('coin')"><span class="tab-icon">🪙</span>COIN<br>FLIP</button>
+  <button class="tab" onclick="switchTab('rps')"><span class="tab-icon">✊</span>RPS</button>
   <button class="tab" onclick="switchTab('flappy')"><span class="tab-icon">🐦</span>FLAP<br>PY</button>
   <button class="tab" onclick="switchTab('missions')" id="mission-tab"><span class="tab-icon">🏆</span>MISS<br>IONS</button>
 </div>
@@ -778,6 +824,98 @@
     </div>
   </div>
 </div>
+<!-- ===== SCRATCH CARD ===== -->
+<div id="sec-scratch" class="game-section">
+  <div class="px-panel">
+    <div class="section-title">[ 스크래치 복권 ]</div>
+    <div style="font-family:var(--vt);font-size:15px;color:var(--dim);text-align:center;margin-bottom:16px;">
+      9칸 중 3개 이상 같은 그림이 나오면 WIN!
+    </div>
+    <div style="display:flex;justify-content:center;margin-bottom:16px;">
+      <div id="scratch-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:240px;"></div>
+    </div>
+    <div class="result-msg" id="scratch-result"></div>
+    <div class="bet-row">
+      <span class="bet-label">BET:</span>
+      <button class="px-btn gold" onclick="scratchBet(-10)">-</button>
+      <span class="bet-display" id="scratch-bet">20</span>
+      <button class="px-btn gold" onclick="scratchBet(+10)">+</button>
+    </div>
+    <div style="text-align:center;">
+      <button class="px-btn green" id="scratch-btn" onclick="playScratch()" style="font-size:9px;padding:10px 24px;letter-spacing:2px;">🎟️ 복권 긁기</button>
+    </div>
+    <hr class="divider">
+    <div style="font-family:var(--vt);font-size:14px;color:var(--dim);text-align:center;line-height:2;">
+      3개 일치: ×3 &nbsp; 4개: ×5 &nbsp; 5개: ×8 &nbsp; 6개: ×15 &nbsp; 7개+: ×30
+    </div>
+  </div>
+</div>
+
+<!-- ===== COIN FLIP ===== -->
+<div id="sec-coin" class="game-section">
+  <div class="px-panel">
+    <div class="section-title">[ 동전 던지기 ]</div>
+    <div style="text-align:center;margin:20px 0;">
+      <div id="coin-display" style="font-size:80px;line-height:1;min-height:90px;display:flex;align-items:center;justify-content:center;">🪙</div>
+    </div>
+    <div id="coin-result-text" style="font-family:var(--vt);font-size:20px;text-align:center;min-height:28px;color:var(--dim);margin-bottom:8px;"></div>
+    <div class="result-msg" id="coin-result"></div>
+    <div class="bet-row">
+      <span class="bet-label">BET:</span>
+      <button class="px-btn gold" onclick="coinBet(-10)">-</button>
+      <span class="bet-display" id="coin-bet">20</span>
+      <button class="px-btn gold" onclick="coinBet(+10)">+</button>
+    </div>
+    <div style="display:flex;justify-content:center;gap:12px;margin-bottom:12px;">
+      <button class="px-btn gold" id="coin-heads" onclick="pickCoin('heads')" style="font-size:9px;padding:10px 20px;">앞면 👑</button>
+      <button class="px-btn blue" id="coin-tails" onclick="pickCoin('tails')" style="font-size:9px;padding:10px 20px;">뒷면 🌊</button>
+    </div>
+    <div style="text-align:center;">
+      <button class="px-btn green" id="coin-flip-btn" onclick="flipCoin()" disabled style="font-size:9px;padding:10px 24px;letter-spacing:2px;">🪙 던지기</button>
+    </div>
+    <hr class="divider">
+    <div style="font-family:var(--vt);font-size:14px;color:var(--dim);text-align:center;line-height:2;">
+      맞히면 ×2 배당 &nbsp;|&nbsp; 연속 적중 보너스 있음!<br>
+      <span id="coin-streak-display" style="color:var(--gold);">연속: 0</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== RPS ===== -->
+<div id="sec-rps" class="game-section">
+  <div class="px-panel">
+    <div class="section-title">[ 가위바위보 ]</div>
+    <div style="display:flex;justify-content:space-around;align-items:center;margin:16px 0;gap:8px;">
+      <div style="text-align:center;">
+        <div style="font-size:8px;color:var(--dim);margin-bottom:6px;letter-spacing:1px;">나</div>
+        <div id="rps-player" style="font-size:64px;min-height:70px;display:flex;align-items:center;justify-content:center;">❓</div>
+      </div>
+      <div style="font-family:var(--vt);font-size:28px;color:var(--dim);">VS</div>
+      <div style="text-align:center;">
+        <div style="font-size:8px;color:var(--dim);margin-bottom:6px;letter-spacing:1px;">딜러</div>
+        <div id="rps-dealer" style="font-size:64px;min-height:70px;display:flex;align-items:center;justify-content:center;">❓</div>
+      </div>
+    </div>
+    <div class="result-msg" id="rps-result"></div>
+    <div class="bet-row">
+      <span class="bet-label">BET:</span>
+      <button class="px-btn gold" onclick="rpsBet(-10)">-</button>
+      <span class="bet-display" id="rps-bet">20</span>
+      <button class="px-btn gold" onclick="rpsBet(+10)">+</button>
+    </div>
+    <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+      <button class="px-btn" onclick="playRPS('rock')"    style="border-color:#aaa;color:#aaa;font-size:11px;padding:10px 16px;">✊ 바위</button>
+      <button class="px-btn" onclick="playRPS('scissors')" style="border-color:#aaa;color:#aaa;font-size:11px;padding:10px 16px;">✌️ 가위</button>
+      <button class="px-btn" onclick="playRPS('paper')"   style="border-color:#aaa;color:#aaa;font-size:11px;padding:10px 16px;">🖐 보</button>
+    </div>
+    <hr class="divider">
+    <div style="font-family:var(--vt);font-size:14px;color:var(--dim);text-align:center;line-height:2;">
+      승리: ×2 &nbsp; 무승부: 베팅 반환 &nbsp; 연승 보너스!<br>
+      <span id="rps-streak-display" style="color:var(--gold);">연속 승리: 0</span>
+    </div>
+  </div>
+</div>
+
 </main>
 
 <script>
@@ -1648,6 +1786,29 @@ const MISSIONS = [
   { id:'flappy_pipe500', name:'🐦 파이프 500개',   desc:'플래피버드 파이프 총 500개',     reward:3000, type:'combo_count', combo:'flappy_pipe',target:500 },
   { id:'flappy_die10',   name:'💀 10번 추락',      desc:'플래피버드 10번 죽기',           reward:100,  type:'combo_count', combo:'flappy_die', target:10 },
   { id:'flappy_die50',   name:'💀 50번 추락',      desc:'플래피버드 50번 죽기',           reward:400,  type:'combo_count', combo:'flappy_die', target:50 },
+
+  // ── 스크래치 복권 ────────────────────────────────────
+  { id:'sc_first',    name:'🎟️ 첫 복권',        desc:'스크래치 복권 1번 긁기',           reward:30,   type:'combo_count', combo:'scratch_play', target:1 },
+  { id:'sc_play10',   name:'🎟️ 복권 10장',      desc:'스크래치 복권 10번 긁기',          reward:80,   type:'combo_count', combo:'scratch_play', target:10 },
+  { id:'sc_play50',   name:'🎟️ 복권 50장',      desc:'스크래치 복권 50번 긁기',          reward:300,  type:'combo_count', combo:'scratch_play', target:50 },
+  { id:'sc_play100',  name:'🎟️ 복권 100장',     desc:'스크래치 복권 100번 긁기',         reward:800,  type:'combo_count', combo:'scratch_play', target:100 },
+  { id:'sc_777',      name:'7️⃣ 복권 777',       desc:'스크래치에서 7️⃣ 3개 이상 맞히기', reward:500,  type:'combo', combo:'scratch_777',    target:1 },
+  { id:'sc_9match',   name:'🎟️ 퍼펙트 복권',    desc:'스크래치 9칸 전부 일치',           reward:2000, type:'combo', combo:'scratch_9match', target:1 },
+
+  // ── 동전 던지기 ─────────────────────────────────────
+  { id:'cf_first',    name:'🪙 첫 동전',          desc:'동전 던지기 1번 플레이',           reward:20,   type:'combo_count', combo:'coin_play', target:1 },
+  { id:'cf_play10',   name:'🪙 동전 10번',        desc:'동전 던지기 10번 플레이',          reward:80,   type:'combo_count', combo:'coin_play', target:10 },
+  { id:'cf_play50',   name:'🪙 동전 50번',        desc:'동전 던지기 50번 플레이',          reward:250,  type:'combo_count', combo:'coin_play', target:50 },
+  { id:'cf_streak5',  name:'🪙 5연속 적중',       desc:'동전 5번 연속 맞히기',             reward:600,  type:'combo', combo:'coin_streak5',  target:1 },
+  { id:'cf_streak10', name:'🪙 10연속 적중',      desc:'동전 10번 연속 맞히기',            reward:2500, type:'combo', combo:'coin_streak10', target:1 },
+
+  // ── 가위바위보 ───────────────────────────────────────
+  { id:'rps_first',   name:'✊ 첫 대결',          desc:'가위바위보 1번 플레이',            reward:20,   type:'combo_count', combo:'rps_play', target:1 },
+  { id:'rps_play10',  name:'✊ 10번 대결',        desc:'가위바위보 10번 플레이',           reward:80,   type:'combo_count', combo:'rps_play', target:10 },
+  { id:'rps_play50',  name:'✊ 50번 대결',        desc:'가위바위보 50번 플레이',           reward:250,  type:'combo_count', combo:'rps_play', target:50 },
+  { id:'rps_streak3', name:'✊ 3연승',            desc:'가위바위보 3번 연속 승리',         reward:200,  type:'combo', combo:'rps_streak3',  target:1 },
+  { id:'rps_streak5', name:'✊ 5연승',            desc:'가위바위보 5번 연속 승리',         reward:600,  type:'combo', combo:'rps_streak5',  target:1 },
+  { id:'rps_streak10',name:'✊ 10연승',           desc:'가위바위보 10번 연속 승리',        reward:2500, type:'combo', combo:'rps_streak10', target:1 },
 ];
 
 // progress state
@@ -2373,6 +2534,192 @@ function checkMissionNotify() {
     if (state === 'idle') { cancelAnimationFrame(idleRaf); startIdleAnim(); }
   });
 })();
+// ======== SCRATCH CARD ========
+const SCRATCH_SYMS = ['🍒','🍋','🍇','💎','⭐','🎰','💰','🔔','7️⃣'];
+let scratchBetAmt = 20;
+let scratchRevealed = [];
+let scratchValues = [];
+let scratchPlaying = false;
+
+function scratchBet(d) {
+  scratchBetAmt = Math.max(10, Math.min(coins, scratchBetAmt + d));
+  document.getElementById('scratch-bet').textContent = scratchBetAmt;
+}
+
+function buildScratchGrid() {
+  const grid = document.getElementById('scratch-grid');
+  grid.innerHTML = '';
+  scratchRevealed = Array(9).fill(false);
+  const picked = [...SCRATCH_SYMS].sort(()=>Math.random()-0.5).slice(0,3);
+  const bag = [...picked,...picked,...picked];
+  bag.sort(()=>Math.random()-0.5);
+  scratchValues = bag;
+  scratchValues.forEach((sym,i) => {
+    const cell = document.createElement('div');
+    cell.className = 'scratch-cell covered';
+    cell.id = 'sc-'+i;
+    cell.textContent = '❓';
+    cell.onclick = () => revealCell(i);
+    grid.appendChild(cell);
+  });
+}
+
+function revealCell(i) {
+  if (scratchRevealed[i] || !scratchPlaying) return;
+  scratchRevealed[i] = true;
+  const cell = document.getElementById('sc-'+i);
+  cell.classList.remove('covered');
+  cell.textContent = scratchValues[i];
+  if (scratchRevealed.every(r=>r)) evalScratch();
+}
+
+function revealAll() { scratchValues.forEach((_,i)=>{ if(!scratchRevealed[i]) revealCell(i); }); }
+
+function playScratch() {
+  if (coins < scratchBetAmt) { showResult('scratch-result','❌ NOT ENOUGH COINS','lose'); return; }
+  coins -= scratchBetAmt; updateHUD(); saveState();
+  scratchPlaying = true;
+  document.getElementById('scratch-result').textContent = '';
+  document.getElementById('scratch-btn').textContent = '전부 긁기 →';
+  document.getElementById('scratch-btn').onclick = revealAll;
+  buildScratchGrid();
+  trackMission('play',{game:'scratch'});
+  trackMission('bet',{amount:scratchBetAmt,game:'scratch'});
+}
+
+function evalScratch() {
+  scratchPlaying = false;
+  document.getElementById('scratch-btn').textContent = '🎟️ 복권 긁기';
+  document.getElementById('scratch-btn').onclick = playScratch;
+  const freq = {};
+  scratchValues.forEach(s=>{ freq[s]=(freq[s]||0)+1; });
+  const maxMatch = Math.max(...Object.values(freq));
+  const matchSym = Object.keys(freq).find(k=>freq[k]===maxMatch);
+  if (maxMatch>=3) scratchValues.forEach((s,i)=>{ if(s===matchSym) document.getElementById('sc-'+i).classList.add('match'); });
+  const multMap = {3:3,4:5,5:8,6:15,7:30,8:50,9:100};
+  const mult = maxMatch>=3 ? (multMap[maxMatch]||100) : 0;
+  let win = 0;
+  if (mult>0) {
+    win = scratchBetAmt*mult; coins += win;
+    showResult('scratch-result',`🎉 ${matchSym} ${maxMatch}개! ×${mult} WIN! +${win-scratchBetAmt}`,'win');
+    popCoins(window.innerWidth/2,300,true);
+    trackMission('win'); trackMission('earned',{amount:win-scratchBetAmt});
+    if (maxMatch===9) trackMission('combo',{combo:'scratch_9match'});
+    if (matchSym==='7️⃣'&&maxMatch>=3) trackMission('combo',{combo:'scratch_777'});
+  } else {
+    showResult('scratch-result',`😢 꽝! -${scratchBetAmt}`,'lose');
+    trackMission('lose');
+  }
+  trackMission('combo',{combo:'scratch_play'});
+  reward(win-scratchBetAmt); updateHUD(); trackMission('coins_check');
+}
+
+// ======== COIN FLIP ========
+let coinBetAmt = 20, coinPick = null, coinFlipping = false, coinStreak = 0;
+
+function coinBet(d) {
+  coinBetAmt = Math.max(10,Math.min(coins,coinBetAmt+d));
+  document.getElementById('coin-bet').textContent = coinBetAmt;
+}
+
+function pickCoin(side) {
+  coinPick = side;
+  document.getElementById('coin-heads').style.background = side==='heads'?'var(--gold)':'var(--panel)';
+  document.getElementById('coin-heads').style.color      = side==='heads'?'#000':'var(--gold)';
+  document.getElementById('coin-tails').style.background = side==='tails'?'var(--blue)':'var(--panel)';
+  document.getElementById('coin-tails').style.color      = side==='tails'?'#fff':'var(--blue)';
+  document.getElementById('coin-flip-btn').disabled = false;
+}
+
+function flipCoin() {
+  if (!coinPick||coinFlipping) return;
+  if (coins<coinBetAmt) { showResult('coin-result','❌ NOT ENOUGH COINS','lose'); return; }
+  coinFlipping = true;
+  coins -= coinBetAmt; updateHUD(); saveState();
+  document.getElementById('coin-flip-btn').disabled = true;
+  document.getElementById('coin-result').textContent = '';
+  document.getElementById('coin-result-text').textContent = '';
+  const disp = document.getElementById('coin-display');
+  disp.innerHTML = '<span class="flipping">🪙</span>';
+  const result = Math.random()<0.5?'heads':'tails';
+  setTimeout(()=>{
+    disp.innerHTML = result==='heads'?'👑':'🌊';
+    document.getElementById('coin-result-text').textContent = result==='heads'?'앞면 (HEAD)':'뒷면 (TAIL)';
+    const won = result===coinPick;
+    const bonusMult = [2,2.5,3,4,6];
+    let win=0;
+    if (won) {
+      coinStreak++;
+      const mult = bonusMult[Math.min(coinStreak-1,bonusMult.length-1)];
+      win = Math.floor(coinBetAmt*mult); coins+=win;
+      showResult('coin-result',`🎉 정답! ×${mult} WIN! +${win-coinBetAmt}`,'win');
+      popCoins(window.innerWidth/2,300,true);
+      trackMission('win'); trackMission('earned',{amount:win-coinBetAmt});
+      if(coinStreak===5)  trackMission('combo',{combo:'coin_streak5'});
+      if(coinStreak===10) trackMission('combo',{combo:'coin_streak10'});
+    } else {
+      coinStreak=0;
+      showResult('coin-result',`❌ 틀림! -${coinBetAmt}`,'lose');
+      trackMission('lose');
+    }
+    document.getElementById('coin-streak-display').textContent=`연속: ${coinStreak}`;
+    reward(win-coinBetAmt); updateHUD();
+    trackMission('play',{game:'coin'}); trackMission('bet',{amount:coinBetAmt,game:'coin'}); trackMission('coins_check');
+    trackMission('combo',{combo:'coin_play'});
+    coinFlipping=false; document.getElementById('coin-flip-btn').disabled=false;
+  },900);
+}
+
+// ======== RPS ========
+let rpsBetAmt=20, rpsStreak=0, rpsPlaying=false;
+const RPS_EMOJI={rock:'✊',scissors:'✌️',paper:'🖐'};
+const RPS_NAMES={rock:'바위',scissors:'가위',paper:'보'};
+const RPS_BEATS={rock:'scissors',scissors:'paper',paper:'rock'};
+
+function rpsBet(d) {
+  rpsBetAmt=Math.max(10,Math.min(coins,rpsBetAmt+d));
+  document.getElementById('rps-bet').textContent=rpsBetAmt;
+}
+
+function playRPS(choice) {
+  if (rpsPlaying) return;
+  if (coins<rpsBetAmt) { showResult('rps-result','❌ NOT ENOUGH COINS','lose'); return; }
+  rpsPlaying=true;
+  coins-=rpsBetAmt; updateHUD(); saveState();
+  document.getElementById('rps-result').textContent='';
+  const pDisp=document.getElementById('rps-player');
+  const dDisp=document.getElementById('rps-dealer');
+  pDisp.innerHTML=`<span class="rps-shaking">${RPS_EMOJI[choice]}</span>`;
+  dDisp.innerHTML=`<span class="rps-shaking">❓</span>`;
+  setTimeout(()=>{
+    const dealer=['rock','scissors','paper'][Math.floor(Math.random()*3)];
+    pDisp.innerHTML=`<span class="rps-reveal">${RPS_EMOJI[choice]}</span>`;
+    dDisp.innerHTML=`<span class="rps-reveal">${RPS_EMOJI[dealer]}</span>`;
+    let win=0,cls,msg;
+    if (choice===dealer) {
+      win=rpsBetAmt; coins+=win; msg=`🤝 무승부! 베팅 반환`; cls='push'; trackMission('push');
+    } else if (RPS_BEATS[choice]===dealer) {
+      rpsStreak++;
+      const mult=rpsStreak>=5?3:rpsStreak>=3?2.5:2;
+      win=Math.floor(rpsBetAmt*mult); coins+=win;
+      msg=`🎉 승리! ${RPS_NAMES[choice]}>${RPS_NAMES[dealer]} ×${mult} +${win-rpsBetAmt}`; cls='win';
+      popCoins(window.innerWidth/2,300,true);
+      trackMission('win'); trackMission('earned',{amount:win-rpsBetAmt});
+      if(rpsStreak===3)  trackMission('combo',{combo:'rps_streak3'});
+      if(rpsStreak===5)  trackMission('combo',{combo:'rps_streak5'});
+      if(rpsStreak===10) trackMission('combo',{combo:'rps_streak10'});
+    } else {
+      rpsStreak=0; msg=`❌ 패배! ${RPS_NAMES[dealer]}>${RPS_NAMES[choice]} -${rpsBetAmt}`; cls='lose'; trackMission('lose');
+    }
+    document.getElementById('rps-streak-display').textContent=`연속 승리: ${rpsStreak}`;
+    showResult('rps-result',msg,cls);
+    reward(win-rpsBetAmt); updateHUD();
+    trackMission('play',{game:'rps'}); trackMission('bet',{amount:rpsBetAmt,game:'rps'}); trackMission('coins_check');
+    trackMission('combo',{combo:'rps_play'});
+    rpsPlaying=false;
+  },700);
+}
+
 loadState();
 updateHUD();
 renderMissions();
